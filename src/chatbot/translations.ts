@@ -1,0 +1,478 @@
+import { Language, ConversationStep } from '../types/conversation';
+import { OccupationType, SchemeCategory } from '../types/scheme';
+
+export interface TranslationStrings {
+  welcome: string;
+  selectLanguage: string;
+  consentPrompt: string;
+  consentDeclined: string;
+  consentRevoked: string;
+  askState: string;
+  invalidState: string;
+  askAge: string;
+  invalidAge: string;
+  askOccupation: string;
+  invalidOccupation: string;
+  askCategory: string;
+  invalidCategory: string;
+  fetchingSchemes: string;
+  noSchemesFound: string;
+  resultsHeader: (count: number) => string;
+  schemeItem: {
+    purpose: string;
+    benefits: string;
+    eligibility: string;
+    documents: string;
+    application: string;
+    officialLink: string;
+    lastVerified: string;
+  };
+  disclaimer: string;
+  helpMessage: string;
+  backAcknowledgment: (stepName: string) => string;
+  cannotGoBack: string;
+  restartPrompt: string;
+  serviceError: string;
+  occupationOptions: Record<OccupationType, string>;
+  categoryOptions: Record<SchemeCategory, string>;
+}
+
+export const INDIAN_STATES_AND_UTS = [
+  'Andhra Pradesh',
+  'Arunachal Pradesh',
+  'Assam',
+  'Bihar',
+  'Chhattisgarh',
+  'Goa',
+  'Gujarat',
+  'Haryana',
+  'Himachal Pradesh',
+  'Jharkhand',
+  'Karnataka',
+  'Kerala',
+  'Madhya Pradesh',
+  'Maharashtra',
+  'Manipur',
+  'Meghalaya',
+  'Mizoram',
+  'Nagaland',
+  'Odisha',
+  'Punjab',
+  'Rajasthan',
+  'Sikkim',
+  'Tamil Nadu',
+  'Telangana',
+  'Tripura',
+  'Uttar Pradesh',
+  'Uttarakhand',
+  'West Bengal',
+  'Andaman and Nicobar Islands',
+  'Chandigarh',
+  'Dadra and Nagar Haveli and Daman and Diu',
+  'Delhi',
+  'Jammu and Kashmir',
+  'Ladakh',
+  'Lakshadweep',
+  'Puducherry',
+] as const;
+
+export const OCCUPATION_MAP: Record<number, OccupationType> = {
+  1: 'Farmer',
+  2: 'Student',
+  3: 'Worker',
+  4: 'Business Owner',
+  5: 'Other',
+};
+
+export const CATEGORY_MAP: Record<number, SchemeCategory> = {
+  1: 'Agriculture',
+  2: 'Education',
+  3: 'Employment',
+  4: 'Housing',
+  5: 'Healthcare',
+  6: 'Pension',
+  7: "Women's Welfare",
+  8: 'Other',
+};
+
+export const TRANSLATIONS: Record<Language, TranslationStrings> = {
+  en: {
+    welcome:
+      `Welcome to *Scheme Saathi*! 🇮🇳\n\n` +
+      `I can help you discover government schemes that may be relevant to you, understand eligibility requirements, and learn how to apply.\n\n` +
+      `Please choose your preferred language / कृपया अपनी भाषा चुनें:\n` +
+      `1. Hindi (हिंदी)\n` +
+      `2. English`,
+
+    selectLanguage:
+      `Please reply with *1* for Hindi or *2* for English.`,
+
+    consentPrompt:
+      `*Privacy & Consent Notice* 🔒\n\n` +
+      `To find relevant schemes, I need a few basic details such as your state, age, and occupation. Your answers may be sent to our scheme-matching service and saved as an enquiry if you agree.\n\n` +
+      `We *never* ask for Aadhaar numbers, bank details, OTPs, or document uploads.\n\n` +
+      `Do you consent?\n` +
+      `1. Yes\n` +
+      `2. No\n\n` +
+      `_(You can reply *STOP* at any point to revoke consent and erase session data)_`,
+
+    consentDeclined:
+      `Understood. You have chosen not to share personal information. 🛡️\n\n` +
+      `You can still ask general questions or use commands:\n` +
+      `• Type *START* to begin again anytime.\n` +
+      `• Type *HELP* for available commands.\n` +
+      `• Visit the national portal at https://www.myscheme.gov.in for direct browsing.`,
+
+    consentRevoked:
+      `Your consent has been revoked and all session data has been cleared. 🛑\n\n` +
+      `No further personal details are stored. If an enquiry was previously submitted to our backend, you may contact support to request its deletion.\n\n` +
+      `Type *START* or *HI* anytime if you wish to begin a new session.`,
+
+    askState:
+      `*Question 1 of 4:* 📍\n` +
+      `Which Indian state or Union Territory do you live in?\n\n` +
+      `_(e.g., Uttar Pradesh, Maharashtra, Bihar, Delhi, Rajasthan, etc.)_`,
+
+    invalidState:
+      `⚠️ We couldn't recognize that state or Union Territory. Please check the spelling and reply with a valid Indian state/UT (e.g. Maharashtra, Bihar, Delhi, Karnataka, Uttar Pradesh).\n\n` +
+      `_(Tip: Reply *BACK* to return to the previous step or *RESTART* to start over)_`,
+
+    askAge:
+      `*Question 2 of 4:* 🎂\n` +
+      `What is your age in years?\n\n` +
+      `_(Please enter a number between 1 and 120, e.g., 24)_`,
+
+    invalidAge:
+      `⚠️ Please enter a valid age as a whole number between 1 and 120 (e.g. 28).\n\n` +
+      `_(Tip: Reply *BACK* to return to the previous step)_`,
+
+    askOccupation:
+      `*Question 3 of 4:* 💼\n` +
+      `What best describes your occupation?\n\n` +
+      `1. Farmer (किसान)\n` +
+      `2. Student (विद्यार्थी)\n` +
+      `3. Worker / Labourer (मज़दूर / श्रमिक)\n` +
+      `4. Business Owner / Self-Employed (व्यापारी / स्वरोजगार)\n` +
+      `5. Other (अन्य)\n\n` +
+      `_(Reply with the option number 1 to 5)_`,
+
+    invalidOccupation:
+      `⚠️ Please reply with a number between 1 and 5 matching your occupation:\n` +
+      `1. Farmer | 2. Student | 3. Worker | 4. Business Owner | 5. Other`,
+
+    askCategory:
+      `*Question 4 of 4:* 🎯\n` +
+      `Which category of government assistance are you most interested in?\n\n` +
+      `1. Agriculture (कृषि)\n` +
+      `2. Education (शिक्षा)\n` +
+      `3. Employment & Skill (रोजगार)\n` +
+      `4. Housing (आवास)\n` +
+      `5. Healthcare (स्वास्थ्य)\n` +
+      `6. Pension & Social Security (पेंशन)\n` +
+      `7. Women's Welfare (महिला कल्याण)\n` +
+      `8. Other / General (अन्य)\n\n` +
+      `_(Reply with the option number 1 to 8)_`,
+
+    invalidCategory:
+      `⚠️ Please reply with a number between 1 and 8 to choose a category:\n` +
+      `1. Agriculture | 2. Education | 3. Employment | 4. Housing | 5. Healthcare | 6. Pension | 7. Women's Welfare | 8. Other`,
+
+    fetchingSchemes: `🔍 Searching for relevant government schemes based on your profile...`,
+
+    noSchemesFound:
+      `🔍 *No direct matches found in our current catalogue*\n\n` +
+      `We searched our catalogue for your criteria, but did not find an exact match at this time.\n\n` +
+      `*Important:* This does *not* mean you are ineligible for government assistance! Our catalogue is continuously expanding.\n\n` +
+      `👉 You can:\n` +
+      `• Visit the official National Portal: https://www.myscheme.gov.in\n` +
+      `• Type *RESTART* to search with different criteria.\n` +
+      `• Type *BACK* to modify your last answer.`,
+
+    resultsHeader: (count: number) =>
+      `🎉 *We found ${count} relevant government ${count === 1 ? 'scheme' : 'schemes'} for you!*\n\n` +
+      `Here are the verified details:`,
+
+    schemeItem: {
+      purpose: '📝 *Purpose:*',
+      benefits: '💰 *Key Benefits:*',
+      eligibility: '👥 *Eligibility Summary:*',
+      documents: '📄 *Required Documents:*',
+      application: '🚀 *How to Apply:*',
+      officialLink: '🔗 *Official Portal:*',
+      lastVerified: '🗓️ *Verified:*',
+    },
+
+    disclaimer:
+      `⚠️ *Notice:* Matches are guidance suggestions based on available data. Scheme Saathi does not determine official government eligibility. Please verify official rules and guidelines on the government portal before submitting applications.\n\n` +
+      `Commands: Type *RESTART* to search again | *HELP* for command list.`,
+
+    helpMessage:
+      `ℹ️ *Scheme Saathi Commands:*\n\n` +
+      `• *BACK* - Go back to the previous question\n` +
+      `• *RESTART* - Start the conversation from the beginning\n` +
+      `• *STOP* - Revoke consent and erase current session data\n` +
+      `• *HELP* - Show this instructions menu`,
+
+    backAcknowledgment: (stepName: string) =>
+      `↩️ Going back to *${stepName}*.`,
+
+    cannotGoBack: `ℹ️ You are at the first step. There is no earlier question to go back to. Type *RESTART* to start over.`,
+
+    restartPrompt: `🔄 Starting a fresh conversation...`,
+
+    serviceError:
+      `⚠️ Our scheme discovery service is temporarily experiencing a delay. Please try again in a few moments.\n\n` +
+      `Type *RESTART* to begin again.`,
+
+    occupationOptions: {
+      Farmer: 'Farmer',
+      Student: 'Student',
+      Worker: 'Worker',
+      'Business Owner': 'Business Owner',
+      Other: 'Other',
+    },
+
+    categoryOptions: {
+      Agriculture: 'Agriculture',
+      Education: 'Education',
+      Employment: 'Employment',
+      Housing: 'Housing',
+      Healthcare: 'Healthcare',
+      Pension: 'Pension',
+      "Women's Welfare": "Women's Welfare",
+      Other: 'Other',
+    },
+  },
+
+  hi: {
+    welcome:
+      `*स्कीम साथी* (Scheme Saathi) में आपका स्वागत है! 🇮🇳\n\n` +
+      `मैं आपको आपके लिए उपयुक्त सरकारी योजनाएं खोजने, पात्रता समझने और आवेदन प्रक्रिया जानने में मदद कर सकता हूँ।\n\n` +
+      `कृपया अपनी पसंदीदा भाषा चुनें / Please choose your language:\n` +
+      `1. हिंदी (Hindi)\n` +
+      `2. English`,
+
+    selectLanguage:
+      `कृपया हिंदी के लिए *1* या अंग्रेजी के लिए *2* भेजें।`,
+
+    consentPrompt:
+      `*गोपनीयता और सहमति सूचना* 🔒\n\n` +
+      `उपयुक्त सरकारी योजनाएं खोजने के लिए, मुझे आपके राज्य, आयु और व्यवसाय जैसी कुछ बुनियादी जानकारियों की आवश्यकता होगी। यदि आप सहमत हैं, तो आपके उत्तर हमारी योजना-मिलान सेवा को भेजे जा सकते हैं और एक पूछताछ के रूप में सहेजे जा सकते हैं।\n\n` +
+      `हम कभी भी आधार नंबर, बैंक विवरण, ओटीपी, पासवर्ड या दस्तावेज़ अपलोड नहीं मांगते हैं।\n\n` +
+      `क्या आप सहमति देते हैं?\n` +
+      `1. हाँ (Yes)\n` +
+      `2. नहीं (No)\n\n` +
+      `_(सहमति वापस लेने और डेटा मिटाने के लिए आप कभी भी *STOP* भेज सकते हैं)_`,
+
+    consentDeclined:
+      `समझा गया। आपने व्यक्तिगत जानकारी साझा न करने का विकल्प चुना है। 🛡️\n\n` +
+      `आप अभी भी सामान्य जानकारी पूछ सकते हैं:\n` +
+      `• कभी भी दोबारा शुरू करने के लिए *START* लिखें।\n` +
+      `• आदेशों की सूची के लिए *HELP* लिखें।\n` +
+      `• सीधे योजनाओं के लिए आधिकारिक पोर्टल पर जाएं: https://www.myscheme.gov.in`,
+
+    consentRevoked:
+      `आपकी सहमति रद्द कर दी गई है और आपका सत्र डेटा मिटा दिया गया है। 🛑\n\n` +
+      `आपकी कोई भी व्यक्तिगत जानकारी सहेजी नहीं गई है। यदि पहले कोई पूछताछ सबमिट हुई थी, तो आप उसे हटाने के लिए सहायता टीम से संपर्क कर सकते हैं।\n\n` +
+      `नया सत्र शुरू करने के लिए कभी भी *START* या *नमस्ते* लिखें।`,
+
+    askState:
+      `*प्रश्न 1 / 4:* 📍\n` +
+      `आप किस भारतीय राज्य या केंद्र शासित प्रदेश में रहते हैं?\n\n` +
+      `_(उदाहरण: उत्तर प्रदेश, बिहार, मध्य प्रदेश, राजस्थान, महाराष्ट्र, दिल्ली आदि)_`,
+
+    invalidState:
+      `⚠️ हम इस राज्य/केंद्र शासित प्रदेश को पहचान नहीं सके। कृपया सही भारतीय राज्य का नाम लिखकर भेजें (जैसे उत्तर प्रदेश, बिहार, मध्य प्रदेश, दिल्ली, राजस्थान आदि)।\n\n` +
+      `_(सुझाव: पिछले प्रश्न पर लौटने के लिए *BACK* या शुरू से शुरू करने के लिए *RESTART* लिखें)_`,
+
+    askAge:
+      `*प्रश्न 2 / 4:* 🎂\n` +
+      `आपकी आयु (उम्र) कितने वर्ष है?\n\n` +
+      `_(कृपया 1 से 120 के बीच एक संख्या लिखें, जैसे: 28)_`,
+
+    invalidAge:
+      `⚠️ कृपया अपनी आयु 1 से 120 के बीच की संख्या में लिखें (जैसे: 25)।\n\n` +
+      `_(सुझाव: पिछले प्रश्न पर लौटने के लिए *BACK* लिखें)_`,
+
+    askOccupation:
+      `*प्रश्न 3 / 4:* 💼\n` +
+      `आपका मुख्य व्यवसाय क्या है?\n\n` +
+      `1. किसान (Farmer)\n` +
+      `2. विद्यार्थी / छात्र (Student)\n` +
+      `3. मज़दूर / श्रमिक (Worker)\n` +
+      `4. व्यापारी / स्वरोजगार (Business Owner)\n` +
+      `5. अन्य (Other)\n\n` +
+      `_(1 से 5 में से एक विकल्प संख्या लिखकर भेजें)_`,
+
+    invalidOccupation:
+      `⚠️ कृपया 1 से 5 में से कोई एक संख्या चुनें:\n` +
+      `1. किसान | 2. विद्यार्थी | 3. श्रमिक | 4. व्यापारी | 5. अन्य`,
+
+    askCategory:
+      `*प्रश्न 4 / 4:* 🎯\n` +
+      `आप किस श्रेणी की सरकारी सहायता में रुचि रखते हैं?\n\n` +
+      `1. कृषि (Agriculture)\n` +
+      `2. शिक्षा (Education)\n` +
+      `3. रोजगार व कौशल (Employment)\n` +
+      `4. आवास (Housing)\n` +
+      `5. स्वास्थ्य व चिकित्सा (Healthcare)\n` +
+      `6. पेंशन व सामाजिक सुरक्षा (Pension)\n` +
+      `7. महिला कल्याण (Women's Welfare)\n` +
+      `8. अन्य (Other)\n\n` +
+      `_(1 से 8 में से एक विकल्प संख्या लिखकर भेजें)_`,
+
+    invalidCategory:
+      `⚠️ कृपया 1 से 8 में से कोई एक संख्या लिखकर भेजें:\n` +
+      `1. कृषि | 2. शिक्षा | 3. रोजगार | 4. आवास | 5. स्वास्थ्य | 6. पेंशन | 7. महिला कल्याण | 8. अन्य`,
+
+    fetchingSchemes: `🔍 आपकी जानकारी के आधार पर उपयुक्त सरकारी योजनाओं की खोज की जा रही है...`,
+
+    noSchemesFound:
+      `🔍 *हमारी वर्तमान सूची में कोई सीधा मिलान नहीं मिला*\n\n` +
+      `हमने आपकी जानकारी के अनुसार खोज की, परंतु इस समय कोई सीधी योजना नहीं मिली।\n\n` +
+      `*महत्वपूर्ण:* इसका अर्थ यह *कदापि नहीं* है कि आप सरकारी सहायता के पात्र नहीं हैं! हमारी सूची लगातार अपडेट की जा रही है।\n\n` +
+      `👉 आप:\n` +
+      `• आधिकारिक राष्ट्रीय पोर्टल देख सकते हैं: https://www.myscheme.gov.in\n` +
+      `• अन्य विकल्पों के साथ खोजने के लिए *RESTART* लिखें।\n` +
+      `• पिछला उत्तर बदलने के लिए *BACK* लिखें।`,
+
+    resultsHeader: (count: number) =>
+      `🎉 *हमें आपके लिए ${count} उपयुक्त सरकारी ${count === 1 ? 'योजना' : 'योजनाएं'} मिली हैं!*\n\n` +
+      `सत्यापित विवरण नीचे दिए गए हैं:`,
+
+    schemeItem: {
+      purpose: '📝 *उद्देश्य:*',
+      benefits: '💰 *मुख्य लाभ:*',
+      eligibility: '👥 *पात्रता संक्षेप:*',
+      documents: '📄 *आवश्यक दस्तावेज़:*',
+      application: '🚀 *आवेदन कैसे करें:*',
+      officialLink: '🔗 *आधिकारिक पोर्टल:*',
+      lastVerified: '🗓️ *सत्यापित:*',
+    },
+
+    disclaimer:
+      `⚠️ *सूचना:* ये परिणाम उपलब्ध जानकारी पर आधारित मार्गदर्शन सुझाव हैं। स्कीम साथी आधिकारिक पात्रता निर्धारित नहीं करता है। कृपया आवेदन करने से पूर्व आधिकारिक पोर्टल पर सभी नियमों की पुष्टि अवश्य करें।\n\n` +
+      `कमांड: दोबारा खोजने के लिए *RESTART* लिखें | सहायता के लिए *HELP* लिखें।`,
+
+    helpMessage:
+      `ℹ️ *स्कीम साथी सहायता निर्देश:*\n\n` +
+      `• *BACK* - पिछले प्रश्न पर वापस जाएं\n` +
+      `• *RESTART* - शुरू से बातचीत प्रारंभ करें\n` +
+      `• *STOP* - सहमति रद्द करें और डेटा मिटाएं\n` +
+      `• *HELP* - यह निर्देश संदेश देखें`,
+
+    backAcknowledgment: (stepName: string) =>
+      `↩️ वापस *${stepName}* पर जा रहे हैं।`,
+
+    cannotGoBack: `ℹ️ आप पहले प्रश्न पर हैं। इससे पहले कोई प्रश्न नहीं है। शुरू से शुरू करने के लिए *RESTART* लिखें।`,
+
+    restartPrompt: `🔄 नई बातचीत शुरू की जा रही है...`,
+
+    serviceError:
+      `⚠️ हमारी योजना सेवा में अस्थायी रुकावट आ रही है। कृपया कुछ क्षणों बाद पुनः प्रयास करें।\n\n` +
+      `दोबारा शुरू करने के लिए *RESTART* लिखें।`,
+
+    occupationOptions: {
+      Farmer: 'किसान',
+      Student: 'विद्यार्थी',
+      Worker: 'श्रमिक/मज़दूर',
+      'Business Owner': 'व्यापारी/स्वरोजगार',
+      Other: 'अन्य',
+    },
+
+    categoryOptions: {
+      Agriculture: 'कृषि',
+      Education: 'शिक्षा',
+      Employment: 'रोजगार',
+      Housing: 'आवास',
+      Healthcare: 'स्वास्थ्य',
+      Pension: 'पेंशन',
+      "Women's Welfare": 'महिला कल्याण',
+      Other: 'अन्य',
+    },
+  },
+};
+
+/**
+ * Normalizes input string for state matching
+ */
+export function matchIndianState(input: string): string | null {
+  const cleaned = input.trim().toLowerCase().replace(/[^a-z\s]/g, '');
+  if (!cleaned) return null;
+
+  // Exact or contains match in list
+  for (const state of INDIAN_STATES_AND_UTS) {
+    const sLower = state.toLowerCase();
+    if (cleaned === sLower || sLower.includes(cleaned) || cleaned.includes(sLower)) {
+      return state;
+    }
+  }
+
+  // Common Hindi / transliterated aliases
+  const aliases: Record<string, string> = {
+    up: 'Uttar Pradesh',
+    'uttar pradesh': 'Uttar Pradesh',
+    uttarpradesh: 'Uttar Pradesh',
+    mp: 'Madhya Pradesh',
+    'madhya pradesh': 'Madhya Pradesh',
+    madhyapradesh: 'Madhya Pradesh',
+    mh: 'Maharashtra',
+    maharashtra: 'Maharashtra',
+    dl: 'Delhi',
+    delhi: 'Delhi',
+    ncr: 'Delhi',
+    newdelhi: 'Delhi',
+    'new delhi': 'Delhi',
+    wb: 'West Bengal',
+    'west bengal': 'West Bengal',
+    bengal: 'West Bengal',
+    tn: 'Tamil Nadu',
+    'tamil nadu': 'Tamil Nadu',
+    tamilnadu: 'Tamil Nadu',
+    ka: 'Karnataka',
+    karnataka: 'Karnataka',
+    rj: 'Rajasthan',
+    rajasthan: 'Rajasthan',
+    br: 'Bihar',
+    bihar: 'Bihar',
+    gj: 'Gujarat',
+    gujarat: 'Gujarat',
+    pb: 'Punjab',
+    punjab: 'Punjab',
+    hr: 'Haryana',
+    haryana: 'Haryana',
+    kl: 'Kerala',
+    kerala: 'Kerala',
+    ap: 'Andhra Pradesh',
+    'andhra pradesh': 'Andhra Pradesh',
+    ts: 'Telangana',
+    telangana: 'Telangana',
+    od: 'Odisha',
+    odisha: 'Odisha',
+    orissa: 'Odisha',
+    jh: 'Jharkhand',
+    jharkhand: 'Jharkhand',
+    cg: 'Chhattisgarh',
+    chhattisgarh: 'Chhattisgarh',
+    chattisgarh: 'Chhattisgarh',
+    uk: 'Uttarakhand',
+    uttarakhand: 'Uttarakhand',
+    uttaranchal: 'Uttarakhand',
+    hp: 'Himachal Pradesh',
+    'himachal pradesh': 'Himachal Pradesh',
+    ga: 'Goa',
+    goa: 'Goa',
+    as: 'Assam',
+    assam: 'Assam',
+    jk: 'Jammu and Kashmir',
+    'jammu and kashmir': 'Jammu and Kashmir',
+    'jammu & kashmir': 'Jammu and Kashmir',
+    kashmir: 'Jammu and Kashmir',
+  };
+
+  if (aliases[cleaned]) {
+    return aliases[cleaned];
+  }
+
+  return null;
+}
