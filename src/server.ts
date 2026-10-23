@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { healthRouter } from './routes/health';
 import { webhookRouter } from './routes/webhook';
 import { simulateRouter } from './routes/simulate';
+import { enquiriesRouter } from './routes/enquiries';
 import { RequestWithRawBody } from './middleware/verifyMetaSignature';
 
 // Load environment variables from .env
@@ -26,6 +27,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/health', healthRouter);
 app.use('/webhook', webhookRouter);
 app.use('/simulate', simulateRouter);
+app.use('/api/enquiries', enquiriesRouter);
 
 // Serve static assets for the WhatsApp Web demo UI
 app.use(express.static(path.join(process.cwd(), 'public')));

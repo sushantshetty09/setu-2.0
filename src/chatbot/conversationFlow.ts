@@ -7,6 +7,8 @@ import {
   UserAnswers,
 } from '../types/conversation';
 import {
+  GenderType,
+  IncomeBracket,
   ISchemeService,
   OccupationType,
   Scheme,
@@ -15,26 +17,32 @@ import {
 } from '../types/scheme';
 import {
   CATEGORY_MAP,
+  GENDER_MAP,
+  INCOME_MAP,
   matchIndianState,
   OCCUPATION_MAP,
   TRANSLATIONS,
 } from './translations';
 import { createInitialState } from './conversationManager';
 import { GeminiService, defaultGeminiService } from '../services/geminiService';
+import { defaultEnquiryService, EnquiryService } from '../services/enquiryService';
 
 export class ConversationFlow {
   private store: IConversationStore;
   private schemeService: ISchemeService;
   private geminiService: GeminiService;
+  private enquiryService: EnquiryService;
 
   constructor(
     store: IConversationStore,
     schemeService: ISchemeService,
-    geminiService: GeminiService = defaultGeminiService
+    geminiService: GeminiService = defaultGeminiService,
+    enquiryService: EnquiryService = defaultEnquiryService
   ) {
     this.store = store;
     this.schemeService = schemeService;
     this.geminiService = geminiService;
+    this.enquiryService = enquiryService;
   }
 
   /**
@@ -169,6 +177,12 @@ export class ConversationFlow {
       case 'CONSENT':
         return this.handleConsent(senderId, state, trimmed);
 
+      case 'ASK_NAME':
+        return this.handleNameAnswer(senderId, state, trimmed);
+
+      case 'ASK_GENDER':
+        return this.handleGenderAnswer(senderId, state, trimmed);
+
       case 'ASK_STATE':
         return this.handleStateAnswer(senderId, state, trimmed);
 
@@ -177,6 +191,9 @@ export class ConversationFlow {
 
       case 'ASK_OCCUPATION':
         return this.handleOccupationAnswer(senderId, state, trimmed);
+
+      case 'ASK_INCOME':
+        return this.handleIncomeAnswer(senderId, state, trimmed);
 
       case 'ASK_CATEGORY':
         return this.handleCategoryAnswer(senderId, state, trimmed);
@@ -187,6 +204,9 @@ export class ConversationFlow {
         if (followUpProfile.isQuestion || trimmed.length >= 4) {
           const aiAnswer = await this.geminiService.answerSchemeQuery(trimmed, {
             language: state.language,
+            name: state.answers.name,
+            gender: state.answers.gender,
+            annualIncome: state.answers.annualIncome,
             state: state.answers.state,
             occupation: state.answers.occupation,
             age: state.answers.age,
@@ -285,10 +305,10 @@ export class ConversationFlow {
       trimmed === 'ಒಪ್ಪಿಗೆ'
     ) {
       state.consent = true;
-      state.step = 'ASK_STATE';
+      state.step = 'ASK_NAME';
       state.history = [{ step: 'CONSENT', answers: {} }];
       await this.store.set(senderId, state);
-      return [t.askState];
+      return [t.askName];
     }
 
     // Check No (2, no, n, नहीं, nahi, ಇಲ್ಲ, ಬೇಡ)
@@ -310,6 +330,109 @@ export class ConversationFlow {
 
     // Invalid response to consent
     return [t.consentPrompt];
+  }
+
+  private async handleNameAnswer(
+    senderId: string,
+    state: ConversationState,
+    input: string
+  ): Promise<string[]> {
+    const lang = state.language;
+    const t = TRANSLATIONS[lang];
+
+    if (state.consent !== true) {
+      return [t.consentDeclined];
+    }
+
+    const trimmed = input.trim();
+    const isAllDigits = /^\d+$/.test(trimmed);
+    const isCommand = ['stop', 'help', 'restart', 'back', 'madad', 'sahay', 'rok'].includes(
+      trimmed.toLowerCase()
+    );
+
+    if (trimmed.length < 2 || trimmed.length > 60 || isAllDigits || isCommand) {
+      return [t.invalidName];
+    }
+
+    // Capitalize each word nicely
+    const cleanedName = trimmed
+      .split(/\s+/)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+
+    this.pushHistory(state, 'ASK_NAME');
+    state.answers.name = cleanedName;
+    state.step = 'ASK_GENDER';
+    await this.store.set(senderId, state);
+
+    return [t.askGender];
+  }
+
+  private async handleGenderAnswer(
+    senderId: string,
+    state: ConversationState,
+    input: string
+  ): Promise<string[]> {
+    const lang = state.language;
+    const t = TRANSLATIONS[lang];
+
+    if (state.consent !== true) {
+      return [t.consentDeclined];
+    }
+
+    const trimmed = input.trim();
+    const num = parseInt(trimmed, 10);
+    let gender: GenderType | null = null;
+
+    if (!isNaN(num) && GENDER_MAP[num]) {
+      gender = GENDER_MAP[num];
+    } else {
+      const lower = trimmed.toLowerCase();
+      if (
+        lower.includes('female') ||
+        lower.includes('woman') ||
+        lower.includes('girl') ||
+        lower.includes('mahila') ||
+        lower.includes('महिला') ||
+        lower.includes('औरत') ||
+        lower.includes('ಮಹಿಳೆ') ||
+        lower.includes('ಹೆಣ್ಣು') ||
+        lower.includes('ಸ್ತ್ರೀ')
+      ) {
+        gender = 'Female';
+      } else if (
+        lower.includes('male') ||
+        lower.includes('man') ||
+        lower.includes('boy') ||
+        lower.includes('purush') ||
+        lower.includes('पुरुष') ||
+        lower.includes('आदमी') ||
+        lower.includes('ಪುರುಷ') ||
+        lower.includes('ಗಂಡು')
+      ) {
+        gender = 'Male';
+      } else if (
+        lower.includes('other') ||
+        lower.includes('trans') ||
+        lower.includes('anya') ||
+        lower.includes('अन्य') ||
+        lower.includes('ಇತರೆ') ||
+        lower.includes('ತೃತೀಯಲಿಂಗ')
+      ) {
+        gender = 'Other';
+      }
+    }
+
+    if (!gender) {
+      return [t.invalidGender];
+    }
+
+    this.pushHistory(state, 'ASK_GENDER');
+    state.answers.gender = gender;
+    state.step = 'ASK_STATE';
+    await this.store.set(senderId, state);
+
+    return [t.askState];
   }
 
   private async handleStateAnswer(
@@ -432,6 +555,71 @@ export class ConversationFlow {
 
     this.pushHistory(state, 'ASK_OCCUPATION');
     state.answers.occupation = occupation;
+    state.step = 'ASK_INCOME';
+    await this.store.set(senderId, state);
+
+    return [t.askIncome];
+  }
+
+  private async handleIncomeAnswer(
+    senderId: string,
+    state: ConversationState,
+    input: string
+  ): Promise<string[]> {
+    const lang = state.language;
+    const t = TRANSLATIONS[lang];
+
+    if (state.consent !== true) {
+      return [t.consentDeclined];
+    }
+
+    const trimmed = input.trim();
+    const num = parseInt(trimmed, 10);
+    let income: IncomeBracket | null = null;
+
+    if (!isNaN(num) && INCOME_MAP[num]) {
+      income = INCOME_MAP[num];
+    } else {
+      const lower = trimmed.toLowerCase();
+      if (
+        lower.includes('bpl') ||
+        lower.includes('below 1') ||
+        lower.includes('1 lakh se kam') ||
+        lower.includes('1ಲಕ್ಷಕ್ಕಿಂತ ಕಡಿಮೆ') ||
+        lower.includes('kam')
+      ) {
+        income = 'Below ₹1 Lakh (BPL)';
+      } else if (
+        lower.includes('1 to 3') ||
+        lower.includes('1-3') ||
+        lower.includes('1 se 3') ||
+        lower.includes('1 ರಿಂದ 3')
+      ) {
+        income = '₹1 Lakh - ₹3 Lakh';
+      } else if (
+        lower.includes('3 to 8') ||
+        lower.includes('3-8') ||
+        lower.includes('3 se 8') ||
+        lower.includes('3 ರಿಂದ 8')
+      ) {
+        income = '₹3 Lakh - ₹8 Lakh';
+      } else if (
+        lower.includes('above 8') ||
+        lower.includes('above') ||
+        lower.includes('8 se jyada') ||
+        lower.includes('8 ಲಕ್ಷಕ್ಕಿಂತ ಹೆಚ್ಚು') ||
+        lower.includes('jyada')
+      ) {
+        income = 'Above ₹8 Lakh';
+      }
+    }
+
+    if (!income) {
+      return [t.invalidIncome];
+    }
+
+    this.pushHistory(state, 'ASK_INCOME');
+    state.answers.annualIncome = income;
     state.step = 'ASK_CATEGORY';
     await this.store.set(senderId, state);
 
@@ -526,8 +714,12 @@ export class ConversationFlow {
     state.step = 'RESULTS';
     await this.store.set(senderId, state);
 
-    // Build user profile
+    // Build complete user profile with all personal non-confidential details
     const profile: UserProfile = {
+      name: state.answers.name,
+      gender: state.answers.gender,
+      annualIncome: state.answers.annualIncome,
+      phoneNumber: senderId,
       state: state.answers.state || 'All India',
       age: state.answers.age || 30,
       occupation: state.answers.occupation || 'Other',
@@ -539,7 +731,36 @@ export class ConversationFlow {
       const schemes = await this.schemeService.getRelevantSchemes(profile);
       state.lastShownSchemes = schemes.map((s) => s.name);
       await this.store.set(senderId, state);
-      return this.formatSchemeResults(schemes, lang);
+
+      // Record citizen enquiry into database for website portal / CRM
+      let enquiryId: string | undefined;
+      const citizenName = state.answers.name || 'Citizen';
+      try {
+        const enquiry = await this.enquiryService.recordEnquiry({
+          senderId,
+          phoneNumber: senderId.startsWith('+') ? senderId : `+${senderId}`,
+          name: citizenName,
+          gender: state.answers.gender || 'Other',
+          annualIncome: state.answers.annualIncome || 'Below ₹1 Lakh (BPL)',
+          state: state.answers.state || 'All India',
+          age: state.answers.age || 30,
+          occupation: state.answers.occupation || 'Other',
+          category: category,
+          language: state.language,
+          matchedSchemesCount: schemes.length,
+          matchedSchemeNames: schemes.map((s) => s.name),
+        });
+        enquiryId = enquiry.id;
+      } catch (err) {
+        console.error('[ConversationFlow] Error recording citizen enquiry:', err);
+      }
+
+      const results = this.formatSchemeResults(schemes, lang);
+      if (enquiryId) {
+        // Insert official confirmation badge right after the results header
+        results.splice(1, 0, t.enquiryRecorded(enquiryId, citizenName));
+      }
+      return results;
     } catch (error) {
       // Return friendly service error without crashing
       return [t.serviceError];
@@ -574,12 +795,18 @@ export class ConversationFlow {
     switch (state.step) {
       case 'CONSENT':
         return [t.backAcknowledgment('Consent'), t.consentPrompt];
+      case 'ASK_NAME':
+        return [t.backAcknowledgment('Name'), t.askName];
+      case 'ASK_GENDER':
+        return [t.backAcknowledgment('Gender'), t.askGender];
       case 'ASK_STATE':
         return [t.backAcknowledgment('State / UT'), t.askState];
       case 'ASK_AGE':
         return [t.backAcknowledgment('Age'), t.askAge];
       case 'ASK_OCCUPATION':
         return [t.backAcknowledgment('Occupation'), t.askOccupation];
+      case 'ASK_INCOME':
+        return [t.backAcknowledgment('Annual Income'), t.askIncome];
       case 'ASK_CATEGORY':
         return [t.backAcknowledgment('Category'), t.askCategory];
       default:

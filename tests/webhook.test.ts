@@ -178,4 +178,52 @@ describe('Webhook and API Endpoints', () => {
       expect(res.body.session.step).toBe('LANGUAGE_SELECTION');
     });
   });
+
+  describe('Website Database Endpoints (/api/enquiries)', () => {
+    it('GET /api/enquiries should return citizen enquiries with non-confidential details', async () => {
+      const res = await request(app).get('/api/enquiries');
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.enquiries)).toBe(true);
+      expect(res.body.enquiries.length).toBeGreaterThanOrEqual(1);
+
+      const first = res.body.enquiries[0];
+      expect(first.name).toBeDefined();
+      expect(first.gender).toBeDefined();
+      expect(first.annualIncome).toBeDefined();
+      expect(first.phoneNumber).toBeDefined();
+    });
+
+    it('GET /api/enquiries/stats should aggregate demographic enquiry stats', async () => {
+      const res = await request(app).get('/api/enquiries/stats');
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.stats.totalEnquiries).toBeGreaterThanOrEqual(1);
+      expect(res.body.stats.byState).toBeDefined();
+      expect(res.body.stats.byGender).toBeDefined();
+      expect(res.body.stats.byIncome).toBeDefined();
+    });
+
+    it('POST /api/enquiries should record a citizen enquiry with personal non-confidential details', async () => {
+      const payload = {
+        name: 'Ravi Kumar',
+        gender: 'Male',
+        phoneNumber: '+91 99887 76655',
+        state: 'Karnataka',
+        age: 34,
+        occupation: 'Farmer',
+        annualIncome: 'Below ₹1 Lakh (BPL)',
+        category: 'Agriculture',
+        language: 'kn',
+        matchedSchemesCount: 2,
+        matchedSchemeNames: ['PM-KISAN', 'KCC'],
+      };
+
+      const res = await request(app).post('/api/enquiries').send(payload);
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.enquiry.name).toBe('Ravi Kumar');
+      expect(res.body.enquiry.id).toMatch(/^ENQ-KA-/);
+    });
+  });
 });

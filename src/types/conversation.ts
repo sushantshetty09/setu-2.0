@@ -1,4 +1,4 @@
-import { SchemeCategory, OccupationType } from './scheme';
+import { SchemeCategory, OccupationType, GenderType, IncomeBracket } from './scheme';
 
 export type Language = 'en' | 'hi' | 'kn';
 
@@ -6,17 +6,23 @@ export type ConversationStep =
   | 'WELCOME'
   | 'LANGUAGE_SELECTION'
   | 'CONSENT'
+  | 'ASK_NAME'
+  | 'ASK_GENDER'
   | 'ASK_STATE'
   | 'ASK_AGE'
   | 'ASK_OCCUPATION'
+  | 'ASK_INCOME'
   | 'ASK_CATEGORY'
   | 'RESULTS'
   | 'STOPPED';
 
 export interface UserAnswers {
+  name?: string;
+  gender?: GenderType;
   state?: string;
   age?: number;
   occupation?: OccupationType;
+  annualIncome?: IncomeBracket;
   category?: SchemeCategory;
 }
 

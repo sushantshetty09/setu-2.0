@@ -57,6 +57,9 @@
         </div>
 
         <div class="header-right">
+          <button id="db-header-btn" class="db-header-pill" title="View Citizen Enquiries Database" aria-label="View Database">
+            <span>📊</span> Database
+          </button>
           <button id="sound-toggle-btn" class="icon-btn" title="Toggle Sound" aria-label="Toggle Sound">
             <span id="sound-icon">🔊</span>
           </button>
@@ -172,6 +175,11 @@
           </ul>
         </div>
 
+        <button id="open-db-panel-btn" class="open-db-portal-btn">
+          <span>📊</span>
+          <span>View Website Database (Enquiries)</span>
+        </button>
+
         <div class="api-status-badge">
           <span class="pulse-dot"></span>
           <span>Connected to Local Backend & Gemini AI</span>
@@ -179,6 +187,104 @@
       </div>
     </aside>
 
+  </div>
+
+  <!-- Website Citizen Enquiries Database Modal -->
+  <div id="db-modal" class="db-modal" aria-hidden="true" style="display: none;">
+    <div class="db-modal-overlay" id="db-modal-overlay"></div>
+    <div class="db-modal-dialog">
+      <header class="db-modal-header">
+        <div class="db-title-group">
+          <div class="db-badge">🏛️ Website Portal Database</div>
+          <h2>Citizen Enquiries & Demographics CRM</h2>
+          <p class="db-subtitle">Live recorded citizen details from WhatsApp enquiries (Personal non-confidential data for website CRM)</p>
+        </div>
+        <button class="db-modal-close" id="db-modal-close" title="Close Modal">&times;</button>
+      </header>
+
+      <!-- KPI Summary Cards -->
+      <div class="db-kpi-grid">
+        <div class="db-kpi-card">
+          <span class="db-kpi-val" id="db-total-count">0</span>
+          <span class="db-kpi-lbl">Total Enquiries</span>
+        </div>
+        <div class="db-kpi-card">
+          <span class="db-kpi-val" id="db-women-count">0</span>
+          <span class="db-kpi-lbl">Women Welfare</span>
+        </div>
+        <div class="db-kpi-card">
+          <span class="db-kpi-val" id="db-bpl-count">0</span>
+          <span class="db-kpi-lbl">BPL / Low Income</span>
+        </div>
+        <div class="db-kpi-card">
+          <span class="db-kpi-val" id="db-top-state">—</span>
+          <span class="db-kpi-lbl">Top State</span>
+        </div>
+      </div>
+
+      <!-- Filters & Toolbar -->
+      <div class="db-toolbar">
+        <div class="db-search-box">
+          <span class="db-search-icon">🔍</span>
+          <input type="text" id="db-search-input" placeholder="Search by citizen name, phone, state or scheme..." />
+        </div>
+        <div class="db-filters">
+          <select id="db-state-filter" class="db-select">
+            <option value="">All States</option>
+            <option value="Karnataka">Karnataka</option>
+            <option value="Uttar Pradesh">Uttar Pradesh</option>
+            <option value="Bihar">Bihar</option>
+            <option value="Maharashtra">Maharashtra</option>
+            <option value="Rajasthan">Rajasthan</option>
+          </select>
+          <select id="db-gender-filter" class="db-select">
+            <option value="">All Genders</option>
+            <option value="Female">Female</option>
+            <option value="Male">Male</option>
+            <option value="Other">Other</option>
+          </select>
+          <button id="db-refresh-btn" class="db-btn" title="Refresh data">🔄 Refresh</button>
+          <button id="db-export-btn" class="db-btn primary" title="Export CSV file">📥 Export CSV</button>
+        </div>
+      </div>
+
+      <!-- Table Section -->
+      <div class="db-table-wrapper">
+        <table class="db-table">
+          <thead>
+            <tr>
+              <th>Ref ID</th>
+              <th>Citizen Name</th>
+              <th>Gender</th>
+              <th>Age</th>
+              <th>State / UT</th>
+              <th>Occupation</th>
+              <th>Annual Income</th>
+              <th>Category</th>
+              <th>Matched Schemes</th>
+              <th>WhatsApp Phone</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="db-table-body">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+        <div id="db-empty-state" class="db-empty-state" style="display: none;">
+          No citizen enquiries match your search query.
+        </div>
+      </div>
+
+      <!-- Footer Info -->
+      <footer class="db-modal-footer">
+        <div class="db-privacy-pill">
+          🔒 <strong>Privacy Assurance:</strong> Zero confidential credentials collected. Strictly non-confidential demographic data for welfare scheme recommendations.
+        </div>
+        <div class="db-api-endpoint-tag">
+          REST API: <code>GET /api/enquiries</code> &bull; <code>GET /api/enquiries/stats</code>
+        </div>
+      </footer>
+    </div>
   </div>
 
   <script src="/app.js"></script>

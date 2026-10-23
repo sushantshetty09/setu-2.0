@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import { GoogleGenAI } from '@google/genai';
 import { SCHEMES_DATABASE } from '../data/schemesDatabase';
-import { Scheme, UserProfile } from '../types/scheme';
+import { GenderType, IncomeBracket, Scheme, UserProfile } from '../types/scheme';
 import { matchIndianState } from '../chatbot/translations';
 
 export interface ChatMessage {
@@ -12,6 +12,9 @@ export interface ChatMessage {
 
 export interface ConversationContext {
   language?: 'en' | 'hi' | 'kn';
+  name?: string;
+  gender?: GenderType;
+  annualIncome?: IncomeBracket;
   state?: string;
   occupation?: string;
   age?: number;
@@ -175,6 +178,9 @@ ${catalogueSummary}`;
     }
 
     let profileContext = '';
+    if (context?.name) profileContext += `[Citizen Name: ${context.name}] `;
+    if (context?.gender) profileContext += `[Gender: ${context.gender}] `;
+    if (context?.annualIncome) profileContext += `[Annual Household Income: ${context.annualIncome}] `;
     if (context?.state) profileContext += `[State: ${context.state}] `;
     if (context?.occupation) profileContext += `[Occupation: ${context.occupation}] `;
     if (context?.age) profileContext += `[Age: ${context.age}] `;
@@ -208,7 +214,7 @@ ${catalogueSummary}`;
   }
 
   /**
-   * Intelligently extracts user profile parameters (state, age, occupation, category) from natural language.
+   * Intelligently extracts user profile parameters (name, gender, income, state, age, occupation, category) from natural language.
    */
   async extractProfileFromQuery(text: string): Promise<Partial<UserProfile> & { isQuestion?: boolean }> {
     const lower = text.toLowerCase();
@@ -224,6 +230,58 @@ ${catalogueSummary}`;
       'ಯಾವ', 'ಹೇಗೆ', 'ಯೋಜನೆ', 'ತಿಳಿಸಿ', 'ಅರ್ಜಿ', 'ದಾಖಲೆ', 'ಅರ್ಹತೆ', 'ಸಹಾಯಧನ', 'ಸಾಲ', 'ಮಾಹಿತಿ', 'ವಿವರ',
     ];
     result.isQuestion = inquiryWords.some((w) => lower.includes(w)) || text.includes('?') || text.length > 20;
+
+    // 0a. Detect Name
+    const namePattern = /(?:my name is|mera naam|nanna hesaru|i am|naam)\s+([A-Za-z\u0900-\u097F\u0C80-\u0CFF]{2,30})/i;
+    const nameMatch = text.match(namePattern);
+    if (nameMatch && nameMatch[1]) {
+      const candidate = nameMatch[1].trim();
+      const forbidden = ['kisan', 'farmer', 'student', 'worker', 'bpl', 'help', 'kannada', 'hindi', 'english'];
+      if (!forbidden.includes(candidate.toLowerCase())) {
+        result.name = candidate.charAt(0).toUpperCase() + candidate.slice(1);
+      }
+    }
+
+    // 0b. Detect Gender
+    if (
+      lower.includes('female') ||
+      lower.includes('woman') ||
+      lower.includes('mahila') ||
+      lower.includes('aurat') ||
+      lower.includes('ladki') ||
+      lower.includes('ಮಹಿಳೆ') ||
+      lower.includes('ಹೆಣ್ಣು') ||
+      lower.includes('ಸ್ತ್ರೀ')
+    ) {
+      result.gender = 'Female';
+    } else if (
+      lower.includes('male') ||
+      lower.includes('man') ||
+      lower.includes('purush') ||
+      lower.includes('aadmi') ||
+      lower.includes('ladka') ||
+      lower.includes('ಪುರುಷ') ||
+      lower.includes('ಗಂಡು')
+    ) {
+      result.gender = 'Male';
+    }
+
+    // 0c. Detect Income Bracket
+    if (
+      lower.includes('bpl') ||
+      lower.includes('below 1 lakh') ||
+      lower.includes('1 lakh se kam') ||
+      lower.includes('garib') ||
+      lower.includes('1 ಲಕ್ಷಕ್ಕಿಂತ ಕಡಿಮೆ')
+    ) {
+      result.annualIncome = 'Below ₹1 Lakh (BPL)';
+    } else if (lower.includes('1 to 3') || lower.includes('1-3') || lower.includes('1 se 3')) {
+      result.annualIncome = '₹1 Lakh - ₹3 Lakh';
+    } else if (lower.includes('3 to 8') || lower.includes('3-8') || lower.includes('3 se 8')) {
+      result.annualIncome = '₹3 Lakh - ₹8 Lakh';
+    } else if (lower.includes('above 8') || lower.includes('8 lakh se jyada') || lower.includes('8 ಲಕ್ಷಕ್ಕಿಂತ ಹೆಚ್ಚು')) {
+      result.annualIncome = 'Above ₹8 Lakh';
+    }
 
     // 1. Detect State
     const matchedState = matchIndianState(text);

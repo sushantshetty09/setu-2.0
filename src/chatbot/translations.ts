@@ -1,5 +1,10 @@
 import { Language, ConversationStep } from '../types/conversation';
-import { OccupationType, SchemeCategory } from '../types/scheme';
+import {
+  GenderType,
+  IncomeBracket,
+  OccupationType,
+  SchemeCategory,
+} from '../types/scheme';
 
 export interface TranslationStrings {
   welcome: string;
@@ -7,12 +12,18 @@ export interface TranslationStrings {
   consentPrompt: string;
   consentDeclined: string;
   consentRevoked: string;
+  askName: string;
+  invalidName: string;
+  askGender: string;
+  invalidGender: string;
   askState: string;
   invalidState: string;
   askAge: string;
   invalidAge: string;
   askOccupation: string;
   invalidOccupation: string;
+  askIncome: string;
+  invalidIncome: string;
   askCategory: string;
   invalidCategory: string;
   fetchingSchemes: string;
@@ -29,10 +40,13 @@ export interface TranslationStrings {
   };
   disclaimer: string;
   helpMessage: string;
+  enquiryRecorded: (id: string, name: string) => string;
   backAcknowledgment: (stepName: string) => string;
   cannotGoBack: string;
   restartPrompt: string;
   serviceError: string;
+  genderOptions: Record<GenderType, string>;
+  incomeOptions: Record<IncomeBracket, string>;
   occupationOptions: Record<OccupationType, string>;
   categoryOptions: Record<SchemeCategory, string>;
 }
@@ -76,6 +90,19 @@ export const INDIAN_STATES_AND_UTS = [
   'Puducherry',
 ] as const;
 
+export const GENDER_MAP: Record<number, GenderType> = {
+  1: 'Female',
+  2: 'Male',
+  3: 'Other',
+};
+
+export const INCOME_MAP: Record<number, IncomeBracket> = {
+  1: 'Below ₹1 Lakh (BPL)',
+  2: '₹1 Lakh - ₹3 Lakh',
+  3: '₹3 Lakh - ₹8 Lakh',
+  4: 'Above ₹8 Lakh',
+};
+
 export const OCCUPATION_MAP: Record<number, OccupationType> = {
   1: 'Farmer',
   2: 'Student',
@@ -110,7 +137,7 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
 
     consentPrompt:
       `*Privacy & Consent Notice* 🔒\n\n` +
-      `To find relevant schemes, I need a few basic details such as your state, age, and occupation. Your answers may be sent to our scheme-matching service and saved as an enquiry if you agree.\n\n` +
+      `To find relevant schemes and record your citizen enquiry in our portal database, I need a few basic non-confidential details (Name, Gender, State, Age, Occupation, and Income range). Your answers will be saved as an enquiry so our team can assist you.\n\n` +
       `We *never* ask for Aadhaar numbers, bank details, OTPs, or document uploads.\n\n` +
       `Do you consent?\n` +
       `1. Yes\n` +
@@ -129,26 +156,45 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
       `No further personal details are stored. If an enquiry was previously submitted to our backend, you may contact support to request its deletion.\n\n` +
       `Type *START* or *HI* anytime if you wish to begin a new session.`,
 
+    askName:
+      `*Question 1 of 7:* 👤\n` +
+      `What is your full name?\n\n` +
+      `_(e.g., Ramesh Kumar, Pooja Sharma)_`,
+
+    invalidName:
+      `⚠️ Please enter a valid name (at least 2 letters, letters and spaces only).`,
+
+    askGender:
+      `*Question 2 of 7:* 🚻\n` +
+      `What is your gender?\n\n` +
+      `1. Female (महिला / ಮಹಿಳೆ)\n` +
+      `2. Male (पुरुष / ಪುರುಷ)\n` +
+      `3. Other (अन्य / ಇತರೆ)\n\n` +
+      `_(Reply with option number 1, 2, or 3)_`,
+
+    invalidGender:
+      `⚠️ Please reply with 1 for Female, 2 for Male, or 3 for Other.`,
+
     askState:
-      `*Question 1 of 4:* 📍\n` +
+      `*Question 3 of 7:* 📍\n` +
       `Which Indian state or Union Territory do you live in?\n\n` +
-      `_(e.g., Uttar Pradesh, Maharashtra, Bihar, Delhi, Rajasthan, etc.)_`,
+      `_(e.g., Uttar Pradesh, Maharashtra, Bihar, Delhi, Karnataka, Rajasthan, etc.)_`,
 
     invalidState:
       `⚠️ We couldn't recognize that state or Union Territory. Please check the spelling and reply with a valid Indian state/UT (e.g. Maharashtra, Bihar, Delhi, Karnataka, Uttar Pradesh).\n\n` +
       `_(Tip: Reply *BACK* to return to the previous step or *RESTART* to start over)_`,
 
     askAge:
-      `*Question 2 of 4:* 🎂\n` +
+      `*Question 4 of 7:* 🎂\n` +
       `What is your age in years?\n\n` +
-      `_(Please enter a number between 1 and 120, e.g., 24)_`,
+      `_(Please enter a number between 1 and 120, e.g., 28)_`,
 
     invalidAge:
       `⚠️ Please enter a valid age as a whole number between 1 and 120 (e.g. 28).\n\n` +
       `_(Tip: Reply *BACK* to return to the previous step)_`,
 
     askOccupation:
-      `*Question 3 of 4:* 💼\n` +
+      `*Question 5 of 7:* 💼\n` +
       `What best describes your occupation?\n\n` +
       `1. Farmer (किसान)\n` +
       `2. Student (विद्यार्थी)\n` +
@@ -161,8 +207,21 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
       `⚠️ Please reply with a number between 1 and 5 matching your occupation:\n` +
       `1. Farmer | 2. Student | 3. Worker | 4. Business Owner | 5. Other`,
 
+    askIncome:
+      `*Question 6 of 7:* 💵\n` +
+      `What is your approximate annual household income?\n\n` +
+      `1. Below ₹1 Lakh (BPL / EWS)\n` +
+      `2. ₹1 Lakh - ₹3 Lakh\n` +
+      `3. ₹3 Lakh - ₹8 Lakh\n` +
+      `4. Above ₹8 Lakh\n\n` +
+      `_(Reply with option number 1 to 4)_`,
+
+    invalidIncome:
+      `⚠️ Please reply with a number between 1 and 4 for your income range:\n` +
+      `1. Below ₹1L | 2. ₹1L-₹3L | 3. ₹3L-₹8L | 4. Above ₹8L`,
+
     askCategory:
-      `*Question 4 of 4:* 🎯\n` +
+      `*Question 7 of 7:* 🎯\n` +
       `Which category of government assistance are you most interested in?\n\n` +
       `1. Agriculture (कृषि)\n` +
       `2. Education (शिक्षा)\n` +
@@ -214,6 +273,12 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
       `• *STOP* - Revoke consent and erase current session data\n` +
       `• *HELP* - Show this instructions menu`,
 
+    enquiryRecorded: (id: string, name: string) =>
+      `📋 *Citizen Enquiry Recorded in Website Database* 💾\n` +
+      `• Enquiry ID: *#${id}*\n` +
+      `• Citizen: *${name}*\n` +
+      `• Status: Successfully logged for website database tracking`,
+
     backAcknowledgment: (stepName: string) =>
       `↩️ Going back to *${stepName}*.`,
 
@@ -224,6 +289,19 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     serviceError:
       `⚠️ Our scheme discovery service is temporarily experiencing a delay. Please try again in a few moments.\n\n` +
       `Type *RESTART* to begin again.`,
+
+    genderOptions: {
+      Female: 'Female',
+      Male: 'Male',
+      Other: 'Other',
+    },
+
+    incomeOptions: {
+      'Below ₹1 Lakh (BPL)': 'Below ₹1 Lakh (BPL)',
+      '₹1 Lakh - ₹3 Lakh': '₹1 Lakh - ₹3 Lakh',
+      '₹3 Lakh - ₹8 Lakh': '₹3 Lakh - ₹8 Lakh',
+      'Above ₹8 Lakh': 'Above ₹8 Lakh',
+    },
 
     occupationOptions: {
       Farmer: 'Farmer',
@@ -259,7 +337,7 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
 
     consentPrompt:
       `*गोपनीयता और सहमति सूचना* 🔒\n\n` +
-      `उपयुक्त सरकारी योजनाएं खोजने के लिए, मुझे आपके राज्य, आयु और व्यवसाय जैसी कुछ बुनियादी जानकारियों की आवश्यकता होगी। यदि आप सहमत हैं, तो आपके उत्तर हमारी योजना-मिलान सेवा को भेजे जा सकते हैं और एक पूछताछ के रूप में सहेजे जा सकते हैं।\n\n` +
+      `उपयुक्त सरकारी योजनाएं खोजने और हमारे पोर्टल डेटाबेस में आपकी नागरिक पूछताछ दर्ज करने के लिए, मुझे आपके नाम, लिंग, राज्य, आयु, व्यवसाय और आय सीमा जैसी कुछ बुनियादी गैर-गोपनीय जानकारियों की आवश्यकता होगी। यदि आप सहमत हैं, तो आपके उत्तर सुरक्षित सहेजे जाएंगे।\n\n` +
       `हम कभी भी आधार नंबर, बैंक विवरण, ओटीपी, पासवर्ड या दस्तावेज़ अपलोड नहीं मांगते हैं।\n\n` +
       `क्या आप सहमति देते हैं?\n` +
       `1. हाँ (Yes)\n` +
@@ -278,17 +356,36 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
       `आपकी कोई भी व्यक्तिगत जानकारी सहेजी नहीं गई है। यदि पहले कोई पूछताछ सबमिट हुई थी, तो आप उसे हटाने के लिए सहायता टीम से संपर्क कर सकते हैं।\n\n` +
       `नया सत्र शुरू करने के लिए कभी भी *START* या *नमस्ते* लिखें।`,
 
+    askName:
+      `*प्रश्न 1 / 7:* 👤\n` +
+      `आपका पूरा नाम क्या है?\n\n` +
+      `_(जैसे: रमेश कुमार, पूजा शर्मा)_`,
+
+    invalidName:
+      `⚠️ कृपया एक मान्य नाम दर्ज करें (कम से कम 2 अक्षर)।`,
+
+    askGender:
+      `*प्रश्न 2 / 7:* 🚻\n` +
+      `आपका लिंग क्या है?\n\n` +
+      `1. महिला (Female)\n` +
+      `2. पुरुष (Male)\n` +
+      `3. अन्य (Other)\n\n` +
+      `_(1, 2 या 3 लिखकर भेजें)_`,
+
+    invalidGender:
+      `⚠️ कृपया महिला के लिए 1, पुरुष के लिए 2, या अन्य के लिए 3 भेजें।`,
+
     askState:
-      `*प्रश्न 1 / 4:* 📍\n` +
+      `*प्रश्न 3 / 7:* 📍\n` +
       `आप किस भारतीय राज्य या केंद्र शासित प्रदेश में रहते हैं?\n\n` +
-      `_(उदाहरण: उत्तर प्रदेश, बिहार, मध्य प्रदेश, राजस्थान, महाराष्ट्र, दिल्ली आदि)_`,
+      `_(उदाहरण: उत्तर प्रदेश, बिहार, मध्य प्रदेश, राजस्थान, महाराष्ट्र, दिल्ली, कर्नाटक आदि)_`,
 
     invalidState:
       `⚠️ हम इस राज्य/केंद्र शासित प्रदेश को पहचान नहीं सके। कृपया सही भारतीय राज्य का नाम लिखकर भेजें (जैसे उत्तर प्रदेश, बिहार, मध्य प्रदेश, दिल्ली, राजस्थान आदि)।\n\n` +
       `_(सुझाव: पिछले प्रश्न पर लौटने के लिए *BACK* या शुरू से शुरू करने के लिए *RESTART* लिखें)_`,
 
     askAge:
-      `*प्रश्न 2 / 4:* 🎂\n` +
+      `*प्रश्न 4 / 7:* 🎂\n` +
       `आपकी आयु (उम्र) कितने वर्ष है?\n\n` +
       `_(कृपया 1 से 120 के बीच एक संख्या लिखें, जैसे: 28)_`,
 
@@ -297,7 +394,7 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
       `_(सुझाव: पिछले प्रश्न पर लौटने के लिए *BACK* लिखें)_`,
 
     askOccupation:
-      `*प्रश्न 3 / 4:* 💼\n` +
+      `*प्रश्न 5 / 7:* 💼\n` +
       `आपका मुख्य व्यवसाय क्या है?\n\n` +
       `1. किसान (Farmer)\n` +
       `2. विद्यार्थी / छात्र (Student)\n` +
@@ -310,8 +407,21 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
       `⚠️ कृपया 1 से 5 में से कोई एक संख्या चुनें:\n` +
       `1. किसान | 2. विद्यार्थी | 3. श्रमिक | 4. व्यापारी | 5. अन्य`,
 
+    askIncome:
+      `*प्रश्न 6 / 7:* 💵\n` +
+      `आपकी लगभग वार्षिक पारिवारिक आय क्या है?\n\n` +
+      `1. ₹1 लाख से कम (BPL / दुर्बल वर्ग)\n` +
+      `2. ₹1 लाख - ₹3 लाख\n` +
+      `3. ₹3 लाख - ₹8 लाख\n` +
+      `4. ₹8 लाख से अधिक\n\n` +
+      `_(1 से 4 में से एक विकल्प संख्या लिखकर भेजें)_`,
+
+    invalidIncome:
+      `⚠️ कृपया 1 से 4 में से कोई एक संख्या लिखकर भेजें:\n` +
+      `1. ₹1 लाख से कम | 2. ₹1-3 लाख | 3. ₹3-8 लाख | 4. ₹8 लाख से अधिक`,
+
     askCategory:
-      `*प्रश्न 4 / 4:* 🎯\n` +
+      `*प्रश्न 7 / 7:* 🎯\n` +
       `आप किस श्रेणी की सरकारी सहायता में रुचि रखते हैं?\n\n` +
       `1. कृषि (Agriculture)\n` +
       `2. शिक्षा (Education)\n` +
@@ -363,6 +473,12 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
       `• *STOP* - सहमति रद्द करें और डेटा मिटाएं\n` +
       `• *HELP* - यह निर्देश संदेश देखें`,
 
+    enquiryRecorded: (id: string, name: string) =>
+      `📋 *वेबसाइट डेटाबेस में नागरिक पूछताछ दर्ज* 💾\n` +
+      `• पूछताछ आईडी: *#${id}*\n` +
+      `• नागरिक: *${name}*\n` +
+      `• स्थिति: सरकारी सहायता के लिए पोर्टल डेटाबेस में सुरक्षित सहेजा गया`,
+
     backAcknowledgment: (stepName: string) =>
       `↩️ वापस *${stepName}* पर जा रहे हैं।`,
 
@@ -373,6 +489,19 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     serviceError:
       `⚠️ हमारी योजना सेवा में अस्थायी रुकावट आ रही है। कृपया कुछ क्षणों बाद पुनः प्रयास करें।\n\n` +
       `दोबारा शुरू करने के लिए *RESTART* लिखें।`,
+
+    genderOptions: {
+      Female: 'महिला',
+      Male: 'पुरुष',
+      Other: 'अन्य',
+    },
+
+    incomeOptions: {
+      'Below ₹1 Lakh (BPL)': '₹1 लाख से कम (BPL)',
+      '₹1 Lakh - ₹3 Lakh': '₹1 लाख - ₹3 लाख',
+      '₹3 Lakh - ₹8 Lakh': '₹3 लाख - ₹8 लाख',
+      'Above ₹8 Lakh': '₹8 लाख से अधिक',
+    },
 
     occupationOptions: {
       Farmer: 'किसान',
@@ -408,7 +537,7 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
 
     consentPrompt:
       `*ಗೌಪ್ಯತೆ ಮತ್ತು ಸಮ್ಮತಿ ಸೂಚನೆ* 🔒\n\n` +
-      `ನಿಮಗೆ ಸೂಕ್ತವಾದ ಸರ್ಕಾರಿ ಯೋಜನೆಗಳನ್ನು ಹುಡುಕಲು, ನಿಮ್ಮ ರಾಜ್ಯ, ವಯಸ್ಸು ಮತ್ತು ವೃತ್ತಿಯಂತಹ ಕೆಲವು ಮೂಲಭೂತ ವಿವರಗಳು ನಮಗೆ ಬೇಕಾಗುತ್ತವೆ. ನೀವು ಒಪ್ಪಿದರೆ, ನಿಮ್ಮ ಉತ್ತರಗಳನ್ನು ನಮ್ಮ ಯೋಜನೆ ಹೊಂದಾಣಿಕೆ ಸೇವೆಗೆ ಕಳುಹಿಸಲಾಗುತ್ತದೆ.\n\n` +
+      `ನಿಮಗೆ ಸೂಕ್ತವಾದ ಸರ್ಕಾರಿ ಯೋಜನೆಗಳನ್ನು ಹುಡುಕಲು ಮತ್ತು ನಮ್ಮ ಪೋರ್ಟಲ್ ಡೇಟಾಬೇಸ್‌ನಲ್ಲಿ ನಿಮ್ಮ ನಾಗರಿಕ ವಿಚಾರಣೆಯನ್ನು ದಾಖಲಿಸಲು, ನಿಮ್ಮ ಹೆಸರು, ಲಿಂಗ, ರಾಜ್ಯ, ವಯಸ್ಸು, ವೃತ್ತಿ ಮತ್ತು ಆದಾಯದ ಮಿತಿಯಂತಹ ಕೆಲವು ಮೂಲಭೂತ ವಿವರಗಳು ನಮಗೆ ಬೇಕಾಗುತ್ತವೆ. ನೀವು ಒಪ್ಪಿದರೆ, ನಿಮ್ಮ ವಿವರಗಳನ್ನು ಸುರಕ್ಷಿತವಾಗಿ ದಾಖಲಿಸಲಾಗುತ್ತದೆ.\n\n` +
       `ನಾವು ಎಂದಿಗೂ ಆಧಾರ್ ಸಂಖ್ಯೆ, ಬ್ಯಾಂಕ್ ವಿವರಗಳು, ಒಟಿಪಿ ಅಥವಾ ದಾಖಲೆಗಳ ಅಪ್‌ಲೋಡ್ ಕೇಳುವುದಿಲ್ಲ.\n\n` +
       `ನೀವು ಸಮ್ಮತಿಸುತ್ತೀರಾ?\n` +
       `1. ಹೌದು (Yes)\n` +
@@ -427,8 +556,27 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
       `ಯಾವುದೇ ವೈಯಕ್ತಿಕ ವಿವರಗಳನ್ನು ಸಂಗ್ರಹಿಸಲಾಗಿಲ್ಲ.\n\n` +
       `ಹೊಸ ಸೆಷನ್ ಪ್ರಾರಂಭಿಸಲು ಯಾವುದೇ ಸಮಯದಲ್ಲಿ *START* ಅಥವಾ *ನಮಸ್ಕಾರ* ಎಂದು ಟೈಪ್ ಮಾಡಿ.`,
 
+    askName:
+      `*ಪ್ರಶ್ನೆ 1 / 7:* 👤\n` +
+      `ನಿಮ್ಮ ಪೂರ್ಣ ಹೆಸರೇನು?\n\n` +
+      `_(ಉದಾಹರಣೆಗೆ: ರಮೇಶ್ ಕುಮಾರ್, ಪೂಜಾ ಶರ್ಮಾ)_`,
+
+    invalidName:
+      `⚠️ ದಯವಿಟ್ಟು ಸರಿಯಾದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ (ಕನಿಷ್ಠ 2 ಅಕ್ಷರಗಳು).`,
+
+    askGender:
+      `*ಪ್ರಶ್ನೆ 2 / 7:* 🚻\n` +
+      `ನಿಮ್ಮ ಲಿಂಗ ಯಾವುದು?\n\n` +
+      `1. ಮಹಿಳೆ (Female)\n` +
+      `2. ಪುರುಷ (Male)\n` +
+      `3. ಇತರೆ (Other)\n\n` +
+      `_(1, 2 ಅಥವಾ 3 ಎಂದು ಉತ್ತರಿಸಿ)_`,
+
+    invalidGender:
+      `⚠️ ದಯವಿಟ್ಟು ಮಹಿಳೆಗಾಗಿ 1, ಪುರುಷರಿಗಾಗಿ 2, ಅಥವಾ ಇತರೆಗೆ 3 ಎಂದು ಆರಿಸಿ ಉತ್ತರಿಸಿ.`,
+
     askState:
-      `*ಪ್ರಶ್ನೆ 1 / 4:* 📍\n` +
+      `*ಪ್ರಶ್ನೆ 3 / 7:* 📍\n` +
       `ನೀವು ಯಾವ ಭಾರತೀಯ ರಾಜ್ಯ ಅಥವಾ ಕೇಂದ್ರಾಡಳಿತ ಪ್ರದೇಶದಲ್ಲಿ ವಾಸಿಸುತ್ತಿದ್ದೀರಿ?\n\n` +
       `_(ಉದಾಹರಣೆಗೆ: ಕರ್ನಾಟಕ, ಮಹಾರಾಷ್ಟ್ರ, ತಮಿಳುನಾಡು, ಆಂಧ್ರಪ್ರದೇಶ, ದೆಹಲಿ, ಇತ್ಯಾದಿ)_`,
 
@@ -437,7 +585,7 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
       `_(ಸಲಹೆ: ಹಿಂದಿನ ಪ್ರಶ್ನೆಗೆ ಮರಳಲು *BACK* ಅಥವಾ ಪುನರಾರಂಭಿಸಲು *RESTART* ಎಂದು ಟೈಪ್ ಮಾಡಿ)_`,
 
     askAge:
-      `*ಪ್ರಶ್ನೆ 2 / 4:* 🎂\n` +
+      `*ಪ್ರಶ್ನೆ 4 / 7:* 🎂\n` +
       `ನಿಮ್ಮ ವಯಸ್ಸು ಎಷ್ಟು ವರ್ಷಗಳು?\n\n` +
       `_(ದಯವಿಟ್ಟು 1 ರಿಂದ 120 ರ ನಡುವಿನ ಪೂರ್ಣಾಂಕ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ, ಉದಾ: 28)_`,
 
@@ -446,7 +594,7 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
       `_(ಸಲಹೆ: ಹಿಂದಿನ ಪ್ರಶ್ನೆಗೆ ಮರಳಲು *BACK* ಎಂದು ಉತ್ತರಿಸಿ)_`,
 
     askOccupation:
-      `*ಪ್ರಶ್ನೆ 3 / 4:* 💼\n` +
+      `*ಪ್ರಶ್ನೆ 5 / 7:* 💼\n` +
       `ನಿಮ್ಮ ಮುಖ್ಯ ವೃತ್ತಿ ಯಾವುದು?\n\n` +
       `1. ರೈತ (Farmer)\n` +
       `2. ವಿದ್ಯಾರ್ಥಿ (Student)\n` +
@@ -459,8 +607,21 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
       `⚠️ ದಯವಿಟ್ಟು ನಿಮ್ಮ ವೃತ್ತಿಗೆ ಸರಿಹೊಂದುವಂತೆ 1 ರಿಂದ 5 ರ ನಡುವಿನ ಸಂಖ್ಯೆಯನ್ನು ಆರಿಸಿ ಕಳುಹಿಸಿ:\n` +
       `1. ರೈತ | 2. ವಿದ್ಯಾರ್ಥಿ | 3. ಕಾರ್ಮಿಕ | 4. ವ್ಯಾಪಾರಿ | 5. ಇತರೆ`,
 
+    askIncome:
+      `*ಪ್ರಶ್ನೆ 6 / 7:* 💵\n` +
+      `ನಿಮ್ಮ ಅಂದಾಜು ವಾರ್ಷಿಕ ಕುಟುಂಬದ ಆದಾಯ ಎಷ್ಟು?\n\n` +
+      `1. ₹1 ಲಕ್ಷಕ್ಕಿಂತ ಕಡಿಮೆ (BPL / ದುರ್ಬಲ ವರ್ಗ)\n` +
+      `2. ₹1 ಲಕ್ಷ - ₹3 ಲಕ್ಷ\n` +
+      `3. ₹3 ಲಕ್ಷ - ₹8 ಲಕ್ಷ\n` +
+      `4. ₹8 ಲಕ್ಷಕ್ಕಿಂತ ಹೆಚ್ಚು\n\n` +
+      `_(1 ರಿಂದ 4 ರ ನಡುವಿನ ಆಯ್ಕೆ ಸಂಖ್ಯೆಯನ್ನು ಕಳುಹಿಸಿ)_`,
+
+    invalidIncome:
+      `⚠️ ದಯವಿಟ್ಟು 1 ರಿಂದ 4 ರ ನಡುವಿನ ಆಯ್ಕೆಯನ್ನು ಆರಿಸಿ ಕಳುಹಿಸಿ:\n` +
+      `1. ₹1 ಲಕ್ಷಕ್ಕಿಂತ ಕಡಿಮೆ | 2. ₹1-3 ಲಕ್ಷ | 3. ₹3-8 ಲಕ್ಷ | 4. ₹8 ಲಕ್ಷಕ್ಕಿಂತ ಹೆಚ್ಚು`,
+
     askCategory:
-      `*ಪ್ರಶ್ನೆ 4 / 4:* 🎯\n` +
+      `*ಪ್ರಶ್ನೆ 7 / 7:* 🎯\n` +
       `ನೀವು ಯಾವ ವರ್ಗದ ಸರ್ಕಾರಿ ಸೌಲಭ್ಯ / ನೆರವಿನಲ್ಲಿ ಆಸಕ್ತಿ ಹೊಂದಿದ್ದೀರಿ?\n\n` +
       `1. ಕೃಷಿ (Agriculture)\n` +
       `2. ಶಿಕ್ಷಣ (Education)\n` +
@@ -512,6 +673,12 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
       `• *STOP* - ಸಮ್ಮತಿಯನ್ನು ಹಿಂಪಡೆಯಿರಿ ಮತ್ತು ಸೆಷನ್ ಡೇಟಾ ಅಳಿಸಿ\n` +
       `• *HELP* - ಈ ಸಹಾಯ ಸಂದೇಶವನ್ನು ತೋರಿಸಿ`,
 
+    enquiryRecorded: (id: string, name: string) =>
+      `📋 *ವೆಬ್‌ಸೈಟ್ ಡೇಟಾಬೇಸ್‌ನಲ್ಲಿ ನಾಗರಿಕ ವಿಚಾರಣೆ ದಾಖಲಾಗಿದೆ* 💾\n` +
+      `• ವಿಚಾರಣೆ ಐಡಿ: *#${id}*\n` +
+      `• ನಾಗರಿಕರು: *${name}*\n` +
+      `• ಸ್ಥಿತಿ: ಪರಿಶೀಲಿಸಿದ ಸರ್ಕಾರಿ ನೆರವಿಗಾಗಿ ಪೋರ್ಟಲ್ ಡೇಟಾಬೇಸ್‌ನಲ್ಲಿ ಸುರಕ್ಷಿತವಾಗಿ ದಾಖಲಿಸಲಾಗಿದೆ`,
+
     backAcknowledgment: (stepName: string) =>
       `↩️ ಹಿಂದಿನ ಹಂತ *${stepName}* ಗೆ ಹಿಂತಿರುಗುತ್ತಿದ್ದೇವೆ.`,
 
@@ -522,6 +689,19 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     serviceError:
       `⚠️ ನಮ್ಮ ಯೋಜನಾ ಸೇವೆಯಲ್ಲಿ ತಾತ್ಕಾಲಿಕ ಅಡಚಣೆ ಉಂಟಾಗಿದೆ. ದಯವಿಟ್ಟು ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.\n\n` +
       `ಮತ್ತೆ ಪ್ರಾರಂಭಿಸಲು *RESTART* ಎಂದು ಟೈಪ್ ಮಾಡಿ.`,
+
+    genderOptions: {
+      Female: 'ಮಹಿಳೆ',
+      Male: 'ಪುರುಷ',
+      Other: 'ಇತರೆ',
+    },
+
+    incomeOptions: {
+      'Below ₹1 Lakh (BPL)': '₹1 ಲಕ್ಷಕ್ಕಿಂತ ಕಡಿಮೆ (BPL)',
+      '₹1 Lakh - ₹3 Lakh': '₹1 ಲಕ್ಷ - ₹3 ಲಕ್ಷ',
+      '₹3 Lakh - ₹8 Lakh': '₹3 ಲಕ್ಷ - ₹8 ಲಕ್ಷ',
+      'Above ₹8 Lakh': '₹8 ಲಕ್ಷಕ್ಕಿಂತ ಹೆಚ್ಚು',
+    },
 
     occupationOptions: {
       Farmer: 'ರೈತ',

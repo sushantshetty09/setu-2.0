@@ -35,12 +35,24 @@ export interface Scheme {
   sourceNote?: string;
 }
 
+export type GenderType = 'Female' | 'Male' | 'Other';
+
+export type IncomeBracket =
+  | 'Below ₹1 Lakh (BPL)'
+  | '₹1 Lakh - ₹3 Lakh'
+  | '₹3 Lakh - ₹8 Lakh'
+  | 'Above ₹8 Lakh';
+
 export interface UserProfile {
+  name?: string;
+  gender?: GenderType;
   state: string;
   age: number;
   occupation: OccupationType;
+  annualIncome?: IncomeBracket;
   category: SchemeCategory;
   language: 'en' | 'hi' | 'kn';
+  phoneNumber?: string;
 }
 
 export interface ISchemeService {

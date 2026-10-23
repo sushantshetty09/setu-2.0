@@ -244,6 +244,213 @@
     });
   }
 
+  // ========================================================
+  // Website Citizen Enquiries Database Modal Controller
+  // ========================================================
+  const dbModal = document.getElementById('db-modal');
+  const dbModalOverlay = document.getElementById('db-modal-overlay');
+  const dbModalClose = document.getElementById('db-modal-close');
+  const dbHeaderBtn = document.getElementById('db-header-btn');
+  const openDbPanelBtn = document.getElementById('open-db-panel-btn');
+
+  const dbTotalCount = document.getElementById('db-total-count');
+  const dbWomenCount = document.getElementById('db-women-count');
+  const dbBplCount = document.getElementById('db-bpl-count');
+  const dbTopState = document.getElementById('db-top-state');
+
+  const dbSearchInput = document.getElementById('db-search-input');
+  const dbStateFilter = document.getElementById('db-state-filter');
+  const dbGenderFilter = document.getElementById('db-gender-filter');
+  const dbRefreshBtn = document.getElementById('db-refresh-btn');
+  const dbExportBtn = document.getElementById('db-export-btn');
+  const dbTableBody = document.getElementById('db-table-body');
+  const dbEmptyState = document.getElementById('db-empty-state');
+
+  let cachedEnquiries = [];
+
+  function openDatabaseModal() {
+    if (!dbModal) return;
+    dbModal.style.display = 'flex';
+    dbModal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    loadEnquiriesAndStats();
+  }
+
+  function closeDatabaseModal() {
+    if (!dbModal) return;
+    dbModal.style.display = 'none';
+    dbModal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  if (dbHeaderBtn) dbHeaderBtn.addEventListener('click', openDatabaseModal);
+  if (openDbPanelBtn) openDbPanelBtn.addEventListener('click', openDatabaseModal);
+  if (dbModalClose) dbModalClose.addEventListener('click', closeDatabaseModal);
+  if (dbModalOverlay) dbModalOverlay.addEventListener('click', closeDatabaseModal);
+
+  // Close on Escape key
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && dbModal && dbModal.style.display === 'flex') {
+      closeDatabaseModal();
+    }
+  });
+
+  async function loadEnquiriesAndStats() {
+    try {
+      if (dbTableBody) {
+        dbTableBody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 24px; color: #94a3b8;">Loading citizen enquiries...</td></tr>`;
+      }
+
+      // Fetch enquiries list & aggregate stats in parallel
+      const [enqRes, statsRes] = await Promise.all([
+        fetch('/api/enquiries?limit=100').then((r) => r.json()),
+        fetch('/api/enquiries/stats').then((r) => r.json()),
+      ]);
+
+      if (enqRes.success && Array.isArray(enqRes.enquiries)) {
+        cachedEnquiries = enqRes.enquiries;
+        renderEnquiriesTable(cachedEnquiries);
+      }
+
+      if (statsRes.success && statsRes.stats) {
+        const stats = statsRes.stats;
+        if (dbTotalCount) dbTotalCount.textContent = stats.totalEnquiries || 0;
+        if (dbWomenCount) dbWomenCount.textContent = stats.byGender?.Female || 0;
+        if (dbBplCount) dbBplCount.textContent = stats.byIncome?.['Below ₹1 Lakh (BPL)'] || 0;
+
+        if (dbTopState && stats.byState) {
+          const sortedStates = Object.entries(stats.byState).sort((a, b) => b[1] - a[1]);
+          if (sortedStates.length > 0) {
+            dbTopState.textContent = `${sortedStates[0][0]} (${sortedStates[0][1]})`;
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[WebSimulator] Failed to load enquiries:', err);
+      if (dbTableBody) {
+        dbTableBody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: #ef4444; padding: 20px;">Could not load database records. Ensure backend is running.</td></tr>`;
+      }
+    }
+  }
+
+  function renderEnquiriesTable(enquiries) {
+    if (!dbTableBody) return;
+    dbTableBody.innerHTML = '';
+
+    if (!enquiries || enquiries.length === 0) {
+      if (dbEmptyState) dbEmptyState.style.display = 'block';
+      return;
+    }
+    if (dbEmptyState) dbEmptyState.style.display = 'none';
+
+    enquiries.forEach(function (item) {
+      const tr = document.createElement('tr');
+
+      // Gender badge class
+      const genderClass = item.gender ? item.gender.toLowerCase() : 'other';
+
+      // Income badge class
+      let incomeClass = 'mid';
+      if (item.annualIncome && item.annualIncome.includes('BPL')) {
+        incomeClass = 'bpl';
+      } else if (item.annualIncome && item.annualIncome.includes('Above')) {
+        incomeClass = 'high';
+      }
+
+      // Schemes pills (max 2 + count)
+      const schemesList = item.matchedSchemeNames || [];
+      const schemePills = schemesList
+        .slice(0, 2)
+        .map((s) => `<span class="db-scheme-pill" title="${s}">🏛️ ${s}</span>`)
+        .join('');
+      const moreBadge = schemesList.length > 2 ? `<small style="color: #25d366;">+${schemesList.length - 2} more</small>` : '';
+
+      // Date formatting
+      const dateStr = item.createdAt ? new Date(item.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+
+      tr.innerHTML = `
+        <td><span class="db-ref-id">${item.id}</span></td>
+        <td><span class="db-citizen-name">${item.name || 'Citizen'}</span></td>
+        <td><span class="db-badge-gender ${genderClass}">${item.gender || '—'}</span></td>
+        <td>${item.age ? item.age + ' yrs' : '—'}</td>
+        <td>📍 <strong>${item.state || 'All India'}</strong></td>
+        <td>${item.occupation || '—'}</td>
+        <td><span class="db-badge-income ${incomeClass}">${item.annualIncome || '—'}</span></td>
+        <td>🎯 ${item.category || 'General'}</td>
+        <td><div class="db-schemes-preview">${schemePills} ${moreBadge}</div></td>
+        <td style="font-family: monospace; color: #94a3b8;">${item.phoneNumber || '—'}</td>
+        <td style="color: #64748b; font-size: 11px; white-space: nowrap;">${dateStr}</td>
+      `;
+
+      dbTableBody.appendChild(tr);
+    });
+  }
+
+  function applyFilters() {
+    const query = dbSearchInput ? dbSearchInput.value.trim().toLowerCase() : '';
+    const stateFilter = dbStateFilter ? dbStateFilter.value : '';
+    const genderFilter = dbGenderFilter ? dbGenderFilter.value : '';
+
+    const filtered = cachedEnquiries.filter(function (item) {
+      if (stateFilter && item.state !== stateFilter) return false;
+      if (genderFilter && item.gender !== genderFilter) return false;
+
+      if (query) {
+        const nameMatch = (item.name || '').toLowerCase().includes(query);
+        const phoneMatch = (item.phoneNumber || '').toLowerCase().includes(query);
+        const idMatch = (item.id || '').toLowerCase().includes(query);
+        const stateMatch = (item.state || '').toLowerCase().includes(query);
+        const schemeMatch = (item.matchedSchemeNames || []).some((s) => s.toLowerCase().includes(query));
+        return nameMatch || phoneMatch || idMatch || stateMatch || schemeMatch;
+      }
+
+      return true;
+    });
+
+    renderEnquiriesTable(filtered);
+  }
+
+  if (dbSearchInput) dbSearchInput.addEventListener('input', applyFilters);
+  if (dbStateFilter) dbStateFilter.addEventListener('change', applyFilters);
+  if (dbGenderFilter) dbGenderFilter.addEventListener('change', applyFilters);
+  if (dbRefreshBtn) dbRefreshBtn.addEventListener('click', loadEnquiriesAndStats);
+
+  // CSV Export
+  if (dbExportBtn) {
+    dbExportBtn.addEventListener('click', function () {
+      if (!cachedEnquiries || cachedEnquiries.length === 0) {
+        alert('No enquiries to export.');
+        return;
+      }
+
+      const headers = ['Enquiry ID', 'Citizen Name', 'Gender', 'Age', 'State', 'Occupation', 'Annual Income', 'Category', 'Language', 'Phone Number', 'Schemes Count', 'Matched Schemes', 'Timestamp'];
+      const rows = cachedEnquiries.map((e) => [
+        `"${e.id}"`,
+        `"${e.name || ''}"`,
+        `"${e.gender || ''}"`,
+        e.age || '',
+        `"${e.state || ''}"`,
+        `"${e.occupation || ''}"`,
+        `"${e.annualIncome || ''}"`,
+        `"${e.category || ''}"`,
+        `"${e.language || ''}"`,
+        `"${e.phoneNumber || ''}"`,
+        e.matchedSchemesCount || 0,
+        `"${(e.matchedSchemeNames || []).join('; ')}"`,
+        `"${e.createdAt || ''}"`,
+      ]);
+
+      const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `scheme_saathi_enquiries_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  }
+
   // Initial Kickoff
   // Automatically greet user with welcome message on load
   setTimeout(function () {

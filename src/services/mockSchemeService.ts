@@ -94,6 +94,15 @@ export class MockSchemeService implements ISchemeService {
         if (!matchesOccupation) return false;
       }
 
+      // 5. Gender check: exclude women-only schemes for male applicants unless explicitly searching women's welfare
+      if (
+        profile.gender === 'Male' &&
+        profile.category !== "Women's Welfare" &&
+        scheme.category === "Women's Welfare"
+      ) {
+        return false;
+      }
+
       return true;
     });
 
@@ -113,6 +122,19 @@ export class MockSchemeService implements ISchemeService {
         scheme.targetOccupations.includes(profile.occupation)
       ) {
         score += 3;
+      }
+      // Gender boost: boost women welfare schemes for female applicants
+      if (profile.gender === 'Female' && scheme.category === "Women's Welfare") {
+        score += 4;
+      }
+      // Income boost: boost subsidy & direct-benefit schemes for low-income/BPL applicants
+      if (
+        profile.annualIncome === 'Below ₹1 Lakh (BPL)' &&
+        (scheme.category === 'Agriculture' ||
+          scheme.category === 'Housing' ||
+          scheme.category === 'Healthcare')
+      ) {
+        score += 2;
       }
       return { scheme, score };
     });
