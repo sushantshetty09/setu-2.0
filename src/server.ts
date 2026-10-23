@@ -1,4 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
+import path from 'path';
 import dotenv from 'dotenv';
 import { healthRouter } from './routes/health';
 import { webhookRouter } from './routes/webhook';
@@ -26,13 +27,26 @@ app.use('/health', healthRouter);
 app.use('/webhook', webhookRouter);
 app.use('/simulate', simulateRouter);
 
-// Root route friendly welcome
-app.get('/', (_req: Request, res: Response) => {
+// Serve static assets for the WhatsApp Web demo UI
+app.use(express.static(path.join(process.cwd(), 'public')));
+
+// WhatsApp Web Demo Route
+app.get('/demo', (_req: Request, res: Response) => {
+  res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
+});
+
+// Root route: serves WhatsApp Web UI for browser, JSON for API clients
+app.get('/', (req: Request, res: Response) => {
+  if (req.accepts('html')) {
+    res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
+    return;
+  }
   res.status(200).json({
     name: 'Scheme Saathi — WhatsApp Government Scheme Chatbot',
     version: '1.0.0',
     description: 'WhatsApp chatbot helping Indian citizens discover government schemes.',
     endpoints: {
+      demoUI: 'GET /demo',
       health: 'GET /health',
       webhookVerification: 'GET /webhook',
       webhookReceiver: 'POST /webhook',
