@@ -20,14 +20,21 @@ import {
   TRANSLATIONS,
 } from './translations';
 import { createInitialState } from './conversationManager';
+import { GeminiService, defaultGeminiService } from '../services/geminiService';
 
 export class ConversationFlow {
   private store: IConversationStore;
   private schemeService: ISchemeService;
+  private geminiService: GeminiService;
 
-  constructor(store: IConversationStore, schemeService: ISchemeService) {
+  constructor(
+    store: IConversationStore,
+    schemeService: ISchemeService,
+    geminiService: GeminiService = defaultGeminiService
+  ) {
     this.store = store;
     this.schemeService = schemeService;
+    this.geminiService = geminiService;
   }
 
   /**
@@ -107,9 +114,29 @@ export class ConversationFlow {
       normalized === 'start' ||
       normalized === 'नमस्ते' ||
       normalized === 'हेलो' ||
-      normalized === 'हाय' ||
-      state.step === 'WELCOME'
+      normalized === 'हाय'
     ) {
+      state = createInitialState(senderId, state.language);
+      state.step = 'LANGUAGE_SELECTION';
+      await this.store.set(senderId, state);
+      return [TRANSLATIONS.en.welcome];
+    }
+
+    // Direct question on first contact
+    if (state.step === 'WELCOME') {
+      const profile = await this.geminiService.extractProfileFromQuery(trimmed);
+      if (profile.isQuestion || trimmed.length > 15) {
+        state.step = 'LANGUAGE_SELECTION';
+        await this.store.set(senderId, state);
+        const aiAnswer = await this.geminiService.answerSchemeQuery(trimmed, {
+          state: profile.state,
+          occupation: profile.occupation,
+        });
+        return [
+          aiAnswer,
+          `\n💡 _(Tip: Reply *1* for Hindi or *2* for English anytime to start the personalized eligibility check)_`,
+        ];
+      }
       state = createInitialState(senderId, state.language);
       state.step = 'LANGUAGE_SELECTION';
       await this.store.set(senderId, state);
@@ -137,11 +164,21 @@ export class ConversationFlow {
         return this.handleCategoryAnswer(senderId, state, trimmed);
 
       case 'RESULTS':
-        // After results are shown, guide the user on next steps
+        // If user asks a question after viewing results, answer it with Gemini AI
+        const followUpProfile = await this.geminiService.extractProfileFromQuery(trimmed);
+        if (followUpProfile.isQuestion || trimmed.length > 8) {
+          const aiAnswer = await this.geminiService.answerSchemeQuery(trimmed, {
+            language: state.language,
+            state: state.answers.state,
+            occupation: state.answers.occupation,
+            age: state.answers.age,
+          });
+          return [aiAnswer];
+        }
         return [
           lang === 'hi'
-            ? `आप पहले ही परिणाम देख चुके हैं।\n• दोबारा खोजने के लिए *RESTART* लिखें।\n• श्रेणी बदलने के लिए *BACK* लिखें।\n• सहायता के लिए *HELP* लिखें।`
-            : `You have completed the enquiry.\n• Type *RESTART* to start a new search.\n• Type *BACK* to change category.\n• Type *HELP* for available commands.`,
+            ? `आप पहले ही परिणाम देख चुके हैं।\n• किसी भी योजना के बारे में प्रश्न पूछें (जैसे: "PM-KISAN के दस्तावेज़ क्या हैं?")\n• दोबारा खोजने के लिए *RESTART* लिखें।\n• श्रेणी बदलने के लिए *BACK* लिखें।\n• सहायता के लिए *HELP* लिखें।`
+            : `You have completed the enquiry.\n• Ask any question about schemes (e.g. "What documents are needed for PM-KISAN?")\n• Type *RESTART* to start a new search.\n• Type *BACK* to change category.\n• Type *HELP* for available commands.`,
         ];
 
       case 'STOPPED':
@@ -172,6 +209,18 @@ export class ConversationFlow {
     }
 
     if (!chosenLang) {
+      // Check if user is asking a free-form scheme question right away!
+      const profile = await this.geminiService.extractProfileFromQuery(input);
+      if (profile.isQuestion || input.length > 15) {
+        const aiAnswer = await this.geminiService.answerSchemeQuery(input, {
+          state: profile.state,
+          occupation: profile.occupation,
+        });
+        return [
+          aiAnswer,
+          `\n💡 _(Tip: Reply *1* for Hindi or *2* for English anytime to start the personalized eligibility check)_`,
+        ];
+      }
       return [TRANSLATIONS.en.selectLanguage];
     }
 
