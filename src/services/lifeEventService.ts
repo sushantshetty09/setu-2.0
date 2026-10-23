@@ -49,7 +49,7 @@ const LIFE_EVENT_SCENARIOS: LifeEventScenarioDefinition[] = [
     keywords: ['college', 'daughter', 'son', 'school', 'scholarship', 'study', 'education', 'fees', 'student', 'padhai', 'chhatravritti', 'university'],
     kannadaKeywords: ['ಕಾಲೇಜು', 'ಮಗಳು', 'ಮಗ', 'ವಿದ್ಯಾರ್ಥಿ', 'ವಿದ್ಯಾರ್ಥಿವೇತನ', 'ಶಿಕ್ಷಣ', 'ಶುಲ್ಕ'],
     hindiKeywords: ['कॉलेज', 'बेटी', 'बेटा', 'छात्र', 'छात्रवृत्ति', 'पढ़ाई', 'शिक्षा', 'फीस', 'विश्वविद्यालय'],
-    schemeIds: ['NSP-POST-MATRIC', 'SUKANYA', 'PRAGATI-SCHOLARSHIP', 'CENTRAL-SECTOR-SCHOLARSHIP', 'PM-USP-EDUCATION-LOAN'],
+    schemeIds: ['NSP-POST-MATRIC-SC', 'NSP-POST-MATRIC-OBC', 'PMKVY', 'NAPS'],
     defaultBenefitType: 'Direct Cash Transfer (DBT)',
   },
   // 4. Elderly Father / Mother / Old Age Pension Support
@@ -59,7 +59,7 @@ const LIFE_EVENT_SCENARIOS: LifeEventScenarioDefinition[] = [
     keywords: ['father', 'mother', 'elderly', 'old', 'pension', 'senior', 'aged', '60', 'bujurg', 'pitaji', 'mataji', 'vriddha'],
     kannadaKeywords: ['ತಂದೆ', 'ತಾಯಿ', 'ವೃದ್ಧ', 'ಹಿರಿಯ', 'ಪಿಂಚಣಿ', '೬೦', 'ವಯಸ್ಸಾದ'],
     hindiKeywords: ['पिताजी', 'माताजी', 'बुजुर्ग', 'वृद्ध', 'पेंशन', 'वृद्धावस्था', 'वरिष्ठ'],
-    schemeIds: ['IGNOAPS', 'APY', 'PM-KMY', 'PM-SYM', 'VARISHTHA-PENSION'],
+    schemeIds: ['NSAP-IGNOAPS', 'PM-KMY', 'NSAP-IGNWPS'],
     defaultBenefitType: 'Social Security Pension',
   },
   // 5. Job Loss / Unemployment / Livelihood Support
@@ -79,7 +79,7 @@ const LIFE_EVENT_SCENARIOS: LifeEventScenarioDefinition[] = [
     keywords: ['equipment', 'tractor', 'machinery', 'tools', 'pump', 'solar pump', 'kusum', 'irrigation', 'motor', 'borewell', 'yantra', 'tubewell'],
     kannadaKeywords: ['ಟ್ರಾಕ್ಟರ್', 'ಯಂತ್ರ', 'ಉಪಕರಣ', 'ಪಂಪ್', 'ಸೋಲಾರ್', 'ನೀರಾವರಿ', 'ಕೃಷಿ ಉಪಕರಣ'],
     hindiKeywords: ['ट्रैक्टर', 'यंत्र', 'उपकरण', 'सोलर पंप', 'सिंचाई', 'मोटर', 'कृषि मशीनरी', 'कुसुम'],
-    schemeIds: ['SMAM', 'PM-KUSUM', 'PMKSY-PDMC', 'AIF'],
+    schemeIds: ['SMAM-FARM-MACHINERY', 'PM-KUSUM-A', 'PM-KUSUM-B', 'PM-KUSUM-C'],
     defaultBenefitType: 'Interest / Capital Subsidy',
   },
   // 7. Housing / Shelter Support

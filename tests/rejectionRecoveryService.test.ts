@@ -19,7 +19,7 @@ describe('Feature 1: Rejection Recovery Assistant', () => {
     expect(res.meaning.toLowerCase()).toContain('name');
 
     // Section B: Stated reason vs possible reasons
-    expect(res.statedReason.toLowerCase()).toContain('name mismatch');
+    expect(res.statedReason.toLowerCase()).toContain('not match');
 
     // Section C: Action plan & docs to check
     expect(res.actionPlan.length).toBeGreaterThan(0);

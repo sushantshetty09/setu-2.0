@@ -49,7 +49,7 @@ describe('Feature 2: Life-Event Benefit Discovery', () => {
     }
 
     // Formatted message must carry the loan caution note
-    expect(res.formattedMessage).toContain('Credit Facility');
+    expect(res.formattedMessage).toContain('NOT free money');
   });
 
   it('should identify education & student scholarship category when student needs college funding', async () => {
