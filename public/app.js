@@ -196,6 +196,15 @@
     quickChips.addEventListener('click', function (e) {
       const chip = e.target.closest('.chip');
       if (chip) {
+        const action = chip.getAttribute('data-action');
+        if (action === 'open-rejection') {
+          openRejectionModal();
+          return;
+        }
+        if (action === 'open-life-event') {
+          openLifeEventModal();
+          return;
+        }
         const text = chip.getAttribute('data-text');
         if (text) {
           sendMessage(text);
@@ -451,6 +460,537 @@
     });
   }
 
+  // ========================================================
+  // Feature 1: Rejection Recovery Assistant Controller
+  // ========================================================
+  const rejectionModal = document.getElementById('rejection-modal');
+  const openRejHeaderBtn = document.getElementById('header-rejection-btn');
+  const openRejSideBtn = document.getElementById('open-rejection-modal-btn');
+  const rejCloseBtn = document.getElementById('rejection-modal-close');
+  const rejOverlay = document.getElementById('rejection-modal-overlay');
+  const rejTextInput = document.getElementById('rej-text-input');
+  const rejSchemeSelect = document.getElementById('rej-scheme-select');
+  const rejStateSelect = document.getElementById('rej-state-select');
+  const rejLangSelect = document.getElementById('rej-lang-select');
+  const rejFileInput = document.getElementById('rej-file-input');
+  const rejPreviewContainer = document.getElementById('rej-preview-container');
+  const rejImagePreview = document.getElementById('rej-image-preview');
+  const rejRemoveImageBtn = document.getElementById('rej-remove-image-btn');
+  const rejAnalyzeBtn = document.getElementById('rej-analyze-btn');
+  const rejClearBtn = document.getElementById('rej-clear-btn');
+  const rejLoading = document.getElementById('rej-loading');
+  const rejResultContainer = document.getElementById('rej-result-container');
+
+  let currentRejBase64 = null;
+  let lastRejectionResult = null;
+
+  function openRejectionModal(initialText = '') {
+    if (!rejectionModal) return;
+    rejectionModal.style.display = 'flex';
+    rejectionModal.setAttribute('aria-hidden', 'false');
+    if (initialText && rejTextInput) {
+      rejTextInput.value = initialText;
+    }
+  }
+
+  function closeRejectionModal() {
+    if (!rejectionModal) return;
+    rejectionModal.style.display = 'none';
+    rejectionModal.setAttribute('aria-hidden', 'true');
+  }
+
+  if (openRejHeaderBtn) openRejHeaderBtn.addEventListener('click', () => openRejectionModal());
+  if (openRejSideBtn) openRejSideBtn.addEventListener('click', () => openRejectionModal());
+  if (rejCloseBtn) rejCloseBtn.addEventListener('click', closeRejectionModal);
+  if (rejOverlay) rejOverlay.addEventListener('click', closeRejectionModal);
+
+  // Sample notice buttons in side panel and quick tags
+  const SAMPLE_REJECTION_NOTICES = {
+    'pm-kisan-name': 'Your application for PM-KISAN registration has been rejected due to beneficiary name mismatch with Aadhaar database.',
+    'pmfby-crop': 'Dear applicant, your PMFBY claim for season Kharif has been rejected as crop loss was reported after the 72-hour window.',
+    'pmay-income': 'Your application for Pradhan Mantri Awas Yojana (PMAY) has been rejected because annual household income exceeds the EWS ceiling limit.',
+    'pm-kisan': 'Your application for PM-KISAN registration has been rejected due to beneficiary name mismatch with Aadhaar database.',
+    'pmfby': 'Dear applicant, your PMFBY claim for season Kharif has been rejected as crop loss was reported after the 72-hour window.',
+    'dbt': 'Beneficiary status: Rejected by PFMS due to Bank Account invalid or inactive. NPCI Aadhaar seeding not detected.',
+    'ambiguous': 'Application status: Rejected.'
+  };
+
+  document.querySelectorAll('[data-rej-sample]').forEach((btn) => {
+    btn.addEventListener('click', function () {
+      const sampleKey = this.getAttribute('data-rej-sample');
+      const sampleText = SAMPLE_REJECTION_NOTICES[sampleKey] || '';
+      openRejectionModal(sampleText);
+    });
+  });
+
+  document.querySelectorAll('.rej-quick-sample').forEach((btn) => {
+    btn.addEventListener('click', function () {
+      const sampleKey = this.getAttribute('data-sample');
+      if (rejTextInput && SAMPLE_REJECTION_NOTICES[sampleKey]) {
+        rejTextInput.value = SAMPLE_REJECTION_NOTICES[sampleKey];
+      }
+    });
+  });
+
+  // Image Upload Handling
+  if (rejFileInput) {
+    rejFileInput.addEventListener('change', function (e) {
+      const file = e.target.files && e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (evt) {
+          currentRejBase64 = evt.target.result;
+          if (rejImagePreview) rejImagePreview.src = currentRejBase64;
+          if (rejPreviewContainer) rejPreviewContainer.style.display = 'flex';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+
+  if (rejRemoveImageBtn) {
+    rejRemoveImageBtn.addEventListener('click', function () {
+      currentRejBase64 = null;
+      if (rejFileInput) rejFileInput.value = '';
+      if (rejPreviewContainer) rejPreviewContainer.style.display = 'none';
+      if (rejImagePreview) rejImagePreview.src = '';
+    });
+  }
+
+  if (rejClearBtn) {
+    rejClearBtn.addEventListener('click', function () {
+      if (rejTextInput) rejTextInput.value = '';
+      if (rejResultContainer) rejResultContainer.style.display = 'none';
+      currentRejBase64 = null;
+      if (rejFileInput) rejFileInput.value = '';
+      if (rejPreviewContainer) rejPreviewContainer.style.display = 'none';
+    });
+  }
+
+  async function performRejectionAnalysis(langOverride) {
+    const rawText = rejTextInput ? rejTextInput.value.trim() : '';
+    if (!rawText && !currentRejBase64) {
+      alert('Please enter a rejection message or upload an image.');
+      return;
+    }
+
+    const lang = langOverride || (rejLangSelect ? rejLangSelect.value : 'en');
+    const schemeName = rejSchemeSelect ? rejSchemeSelect.value : undefined;
+    const state = rejStateSelect ? rejStateSelect.value : undefined;
+
+    if (rejLoading) rejLoading.style.display = 'flex';
+    if (rejResultContainer) rejResultContainer.style.display = 'none';
+
+    try {
+      const res = await fetch('/api/rejection/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rawText: rawText || 'Rejection notice attached in screenshot',
+          schemeName,
+          state,
+          language: lang,
+          imageBase64: currentRejBase64 || undefined,
+        }),
+      });
+
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      const data = await res.json();
+      if (!data.success || !data.result) throw new Error(data.error || 'Failed to analyze rejection');
+
+      lastRejectionResult = data.result;
+      renderRejectionResult(data.result);
+    } catch (err) {
+      alert('Analysis error: ' + (err.message || 'Server error'));
+    } finally {
+      if (rejLoading) rejLoading.style.display = 'none';
+    }
+  }
+
+  function renderRejectionResult(r) {
+    if (!rejResultContainer) return;
+
+    // Section A
+    const meaningEl = document.getElementById('rej-res-meaning');
+    if (meaningEl) meaningEl.textContent = r.meaning || 'Application held or rejected.';
+
+    // Section B
+    const statedEl = document.getElementById('rej-res-stated');
+    if (statedEl) statedEl.textContent = r.statedReason || 'Demographic verification failure.';
+
+    const possibleList = document.getElementById('rej-res-possible');
+    const possibleBlock = document.getElementById('rej-possible-block');
+    if (possibleList) {
+      possibleList.innerHTML = '';
+      if (r.possibleReasons && r.possibleReasons.length > 0) {
+        r.possibleReasons.forEach((p) => {
+          const li = document.createElement('li');
+          li.textContent = p;
+          possibleList.appendChild(li);
+        });
+        if (possibleBlock) possibleBlock.style.display = 'block';
+      } else {
+        if (possibleBlock) possibleBlock.style.display = 'none';
+      }
+    }
+
+    // Section C
+    const actionPlanList = document.getElementById('rej-res-action-plan');
+    if (actionPlanList) {
+      actionPlanList.innerHTML = '';
+      (r.actionPlan || []).forEach((step) => {
+        const li = document.createElement('li');
+        li.textContent = step;
+        actionPlanList.appendChild(li);
+      });
+    }
+
+    const docsList = document.getElementById('rej-res-docs');
+    if (docsList) {
+      docsList.innerHTML = '';
+      (r.documentsToCheck || []).forEach((doc) => {
+        const li = document.createElement('li');
+        li.textContent = doc;
+        docsList.appendChild(li);
+      });
+    }
+
+    // Section D
+    const portalLink = document.getElementById('rej-res-portal-link');
+    const portalName = document.getElementById('rej-res-portal-name');
+    if (portalLink && portalName) {
+      portalLink.href = r.officialPortalUrl || 'https://www.myscheme.gov.in/';
+      portalName.textContent = r.officialPortalName || 'Official Scheme Portal';
+    }
+
+    const grievanceLink = document.getElementById('rej-res-grievance-link');
+    const grievanceName = document.getElementById('rej-res-grievance-name');
+    if (grievanceLink && grievanceName) {
+      grievanceLink.href = r.grievanceChannelUrl || 'https://pgportal.gov.in/';
+      grievanceName.textContent = r.grievanceChannelName || 'Centralised Public Grievance Portal (CPGRAMS)';
+    }
+
+    const helplineBox = document.getElementById('rej-res-helpline-box');
+    const helplineEl = document.getElementById('rej-res-helpline');
+    if (helplineBox && helplineEl) {
+      if (r.verifiedHelpline) {
+        helplineEl.textContent = r.verifiedHelpline;
+        helplineBox.style.display = 'block';
+      } else {
+        helplineBox.style.display = 'none';
+      }
+    }
+
+    const deadlineBox = document.getElementById('rej-res-deadline-box');
+    const deadlineEl = document.getElementById('rej-res-deadline');
+    if (deadlineBox && deadlineEl) {
+      if (r.verifiedDeadline) {
+        deadlineEl.textContent = r.verifiedDeadline;
+        deadlineBox.style.display = 'block';
+      } else {
+        deadlineBox.style.display = 'none';
+      }
+    }
+
+    // Section E
+    const escalationList = document.getElementById('rej-res-escalation');
+    if (escalationList) {
+      escalationList.innerHTML = '';
+      (r.escalationOptions || []).forEach((opt) => {
+        const li = document.createElement('li');
+        li.textContent = opt;
+        escalationList.appendChild(li);
+      });
+    }
+
+    // Follow up clarification questions
+    const clarBox = document.getElementById('rej-res-clarification');
+    const qList = document.getElementById('rej-res-questions');
+    if (clarBox && qList) {
+      if (r.needsClarification && r.followUpQuestions && r.followUpQuestions.length > 0) {
+        qList.innerHTML = '';
+        r.followUpQuestions.forEach((q) => {
+          const li = document.createElement('li');
+          li.textContent = q;
+          qList.appendChild(li);
+        });
+        clarBox.style.display = 'block';
+      } else {
+        clarBox.style.display = 'none';
+      }
+    }
+
+    rejResultContainer.style.display = 'flex';
+  }
+
+  if (rejAnalyzeBtn) rejAnalyzeBtn.addEventListener('click', () => performRejectionAnalysis());
+
+  // Result Toolbar Action Buttons
+  const rejActHindi = document.getElementById('rej-act-hindi');
+  if (rejActHindi) {
+    rejActHindi.addEventListener('click', () => {
+      if (rejLangSelect) rejLangSelect.value = 'hi';
+      performRejectionAnalysis('hi');
+    });
+  }
+
+  const rejActKannada = document.getElementById('rej-act-kannada');
+  if (rejActKannada) {
+    rejActKannada.addEventListener('click', () => {
+      if (rejLangSelect) rejLangSelect.value = 'kn';
+      performRejectionAnalysis('kn');
+    });
+  }
+
+  const rejActSimple = document.getElementById('rej-act-simple');
+  if (rejActSimple) {
+    rejActSimple.addEventListener('click', () => {
+      if (!lastRejectionResult) return;
+      const meaningEl = document.getElementById('rej-res-meaning');
+      if (meaningEl) {
+        meaningEl.innerHTML = `<strong>💡 Plain-Language Summary:</strong><br>` +
+          `1. Your application could not be verified because records in the system do not match.<br>` +
+          `2. Check your Aadhaar spelling and ask your bank to enable NPCI Direct Benefit Transfer (DBT).<br>` +
+          `3. After updating, re-verify your status on the official portal. No fee is required.`;
+      }
+    });
+  }
+
+  const rejActSendChat = document.getElementById('rej-act-send-chat');
+  if (rejActSendChat) {
+    rejActSendChat.addEventListener('click', () => {
+      if (lastRejectionResult && lastRejectionResult.formattedMessage) {
+        closeRejectionModal();
+        appendMessage(lastRejectionResult.formattedMessage, false);
+      }
+    });
+  }
+
+  // ========================================================
+  // Feature 2: Life-Event Benefit Discovery Controller
+  // ========================================================
+  const lifeEventModal = document.getElementById('life-event-modal');
+  const openLeHeaderBtn = document.getElementById('header-life-event-btn');
+  const openLeSideBtn = document.getElementById('open-life-event-modal-btn');
+  const leCloseBtn = document.getElementById('life-event-modal-close');
+  const leOverlay = document.getElementById('life-event-modal-overlay');
+  const leSituationInput = document.getElementById('le-situation-input');
+  const leStateSelect = document.getElementById('le-state-select');
+  const leOccSelect = document.getElementById('le-occ-select');
+  const leLangSelect = document.getElementById('le-lang-select');
+  const leDiscoverBtn = document.getElementById('le-discover-btn');
+  const leClearBtn = document.getElementById('le-clear-btn');
+  const leLoading = document.getElementById('le-loading');
+  const leResultContainer = document.getElementById('le-result-container');
+
+  let lastLifeEventResult = null;
+
+  function openLifeEventModal(initialText = '') {
+    if (!lifeEventModal) return;
+    lifeEventModal.style.display = 'flex';
+    lifeEventModal.setAttribute('aria-hidden', 'false');
+    if (initialText && leSituationInput) {
+      leSituationInput.value = initialText;
+    }
+  }
+
+  function closeLifeEventModal() {
+    if (!lifeEventModal) return;
+    lifeEventModal.style.display = 'none';
+    lifeEventModal.setAttribute('aria-hidden', 'true');
+  }
+
+  if (openLeHeaderBtn) openLeHeaderBtn.addEventListener('click', () => openLifeEventModal());
+  if (openLeSideBtn) openLeSideBtn.addEventListener('click', () => openLifeEventModal());
+  if (leCloseBtn) leCloseBtn.addEventListener('click', closeLifeEventModal);
+  if (leOverlay) leOverlay.addEventListener('click', closeLifeEventModal);
+
+  // Preset situations from side panel & modal
+  const SAMPLE_LIFE_EVENTS = {
+    'crop-damage': 'Meri fasal baarish ki वजह se kharab ho gayi hai.',
+    'small-business': 'I want to start a small business but I have very little money.',
+    'daughter-college': 'My daughter is going to college and I need financial assistance.',
+    'elderly-pension': 'My father is elderly and needs pension support.',
+  };
+
+  document.querySelectorAll('[data-le-sample]').forEach((btn) => {
+    btn.addEventListener('click', function () {
+      const sampleKey = this.getAttribute('data-le-sample');
+      const sampleText = SAMPLE_LIFE_EVENTS[sampleKey] || '';
+      openLifeEventModal(sampleText);
+    });
+  });
+
+  document.querySelectorAll('.le-quick-preset').forEach((btn) => {
+    btn.addEventListener('click', function () {
+      const text = this.getAttribute('data-text');
+      if (leSituationInput && text) {
+        leSituationInput.value = text;
+      }
+    });
+  });
+
+  if (leClearBtn) {
+    leClearBtn.addEventListener('click', function () {
+      if (leSituationInput) leSituationInput.value = '';
+      if (leResultContainer) leResultContainer.style.display = 'none';
+    });
+  }
+
+  async function performLifeEventDiscovery(langOverride) {
+    const userSituation = leSituationInput ? leSituationInput.value.trim() : '';
+    if (!userSituation) {
+      alert('Please describe your real-life situation or need.');
+      return;
+    }
+
+    const lang = langOverride || (leLangSelect ? leLangSelect.value : 'en');
+    const state = leStateSelect ? leStateSelect.value : undefined;
+    const occupation = leOccSelect ? leOccSelect.value : undefined;
+
+    if (leLoading) leLoading.style.display = 'flex';
+    if (leResultContainer) leResultContainer.style.display = 'none';
+
+    try {
+      const res = await fetch('/api/life-events/discover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userSituation,
+          state,
+          occupation,
+          language: lang,
+        }),
+      });
+
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      const data = await res.json();
+      if (!data.success || !data.result) throw new Error(data.error || 'Failed to discover benefits');
+
+      lastLifeEventResult = data.result;
+      renderLifeEventResult(data.result);
+    } catch (err) {
+      alert('Discovery error: ' + (err.message || 'Server error'));
+    } finally {
+      if (leLoading) leLoading.style.display = 'none';
+    }
+  }
+
+  function renderLifeEventResult(r) {
+    if (!leResultContainer) return;
+
+    const eventEl = document.getElementById('le-res-event');
+    if (eventEl) eventEl.textContent = `Event: ${r.identifiedLifeEvent}`;
+
+    const needEl = document.getElementById('le-res-need');
+    if (needEl) needEl.textContent = `Need: ${r.identifiedNeed}`;
+
+    const catEl = document.getElementById('le-res-cat');
+    if (catEl) catEl.textContent = `Category: ${r.primaryCategory}`;
+
+    const expEl = document.getElementById('le-res-explanation');
+    if (expEl) expEl.textContent = r.summaryExplanation;
+
+    const cardsGrid = document.getElementById('le-cards-grid');
+    if (cardsGrid) {
+      cardsGrid.innerHTML = '';
+      (r.matches || []).forEach((m) => {
+        const card = document.createElement('div');
+        card.className = 'scheme-card';
+
+        const loanWarningHtml = m.isLoan
+          ? `<div class="loan-warning-pill">⚠️ <strong>Credit Facility:</strong> This scheme provides a loan that requires repayment, not a free grant.</div>`
+          : '';
+
+        card.innerHTML = `
+          <div class="scheme-card-header">
+            <div>
+              <div class="scheme-card-title">${m.scheme.name}</div>
+              <div class="scheme-card-dept">🏛️ ${m.scheme.ministry} &bull; State: ${m.scheme.state}</div>
+            </div>
+            <span class="benefit-type-badge">${m.benefitType}</span>
+          </div>
+          ${loanWarningHtml}
+          <div class="scheme-card-block">
+            <span class="block-label">💡 Why this matches:</span>
+            <span class="block-content">${m.whyMatched}</span>
+          </div>
+          <div class="scheme-card-block">
+            <span class="block-label">💰 Benefits:</span>
+            <span class="block-content">${m.financialAssistanceDetails}</span>
+          </div>
+          <div class="scheme-card-block">
+            <span class="block-label">👥 Apparent Eligibility:</span>
+            <span class="block-content">${m.apparentEligibility}</span>
+          </div>
+          <div class="scheme-card-block">
+            <span class="block-label">⚠️ Exclusions:</span>
+            <span class="block-content">${m.importantExclusions.join(' • ')}</span>
+          </div>
+          <div class="scheme-card-block">
+            <span class="block-label">📄 Key Documents:</span>
+            <span class="block-content">${m.requiredDocuments.slice(0, 3).join(', ')}</span>
+          </div>
+          <div style="margin-top: 6px;">
+            <a href="${m.officialApplicationUrl}" target="_blank" rel="noopener noreferrer" class="portal-btn">
+              <span>Official Application Portal ↗</span>
+            </a>
+          </div>
+        `;
+        cardsGrid.appendChild(card);
+      });
+    }
+
+    const missingBox = document.getElementById('le-missing-details-box');
+    const missingText = document.getElementById('le-missing-details-text');
+    if (missingBox && missingText) {
+      if (r.missingDetailsPrompt) {
+        missingText.textContent = r.missingDetailsPrompt;
+        missingBox.style.display = 'flex';
+      } else {
+        missingBox.style.display = 'none';
+      }
+    }
+
+    leResultContainer.style.display = 'flex';
+  }
+
+  if (leDiscoverBtn) leDiscoverBtn.addEventListener('click', () => performLifeEventDiscovery());
+
+  const leActHindi = document.getElementById('le-act-hindi');
+  if (leActHindi) {
+    leActHindi.addEventListener('click', () => {
+      if (leLangSelect) leLangSelect.value = 'hi';
+      performLifeEventDiscovery('hi');
+    });
+  }
+
+  const leActKannada = document.getElementById('le-act-kannada');
+  if (leActKannada) {
+    leActKannada.addEventListener('click', () => {
+      if (leLangSelect) leLangSelect.value = 'kn';
+      performLifeEventDiscovery('kn');
+    });
+  }
+
+  const leActChatEligibility = document.getElementById('le-act-chat-eligibility');
+  if (leActChatEligibility) {
+    leActChatEligibility.addEventListener('click', () => {
+      closeLifeEventModal();
+      sendMessage('Check my eligibility');
+    });
+  }
+
+  const leActSendChat = document.getElementById('le-act-send-chat');
+  if (leActSendChat) {
+    leActSendChat.addEventListener('click', () => {
+      if (lastLifeEventResult && lastLifeEventResult.formattedMessage) {
+        closeLifeEventModal();
+        appendMessage(lastLifeEventResult.formattedMessage, false);
+      }
+    });
+  }
+
   // Initial Kickoff
   // Automatically greet user with welcome message on load
   setTimeout(function () {
@@ -458,3 +998,4 @@
   }, 400);
 
 })();
+

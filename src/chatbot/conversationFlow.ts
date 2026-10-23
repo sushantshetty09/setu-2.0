@@ -26,23 +26,37 @@ import {
 import { createInitialState } from './conversationManager';
 import { GeminiService, defaultGeminiService } from '../services/geminiService';
 import { defaultEnquiryService, EnquiryService } from '../services/enquiryService';
+import {
+  RejectionRecoveryService,
+  defaultRejectionRecoveryService,
+} from '../services/rejectionRecoveryService';
+import {
+  LifeEventService,
+  defaultLifeEventService,
+} from '../services/lifeEventService';
 
 export class ConversationFlow {
   private store: IConversationStore;
   private schemeService: ISchemeService;
   private geminiService: GeminiService;
   private enquiryService: EnquiryService;
+  private rejectionService: RejectionRecoveryService;
+  private lifeEventService: LifeEventService;
 
   constructor(
     store: IConversationStore,
     schemeService: ISchemeService,
     geminiService: GeminiService = defaultGeminiService,
-    enquiryService: EnquiryService = defaultEnquiryService
+    enquiryService: EnquiryService = defaultEnquiryService,
+    rejectionService: RejectionRecoveryService = defaultRejectionRecoveryService,
+    lifeEventService: LifeEventService = defaultLifeEventService
   ) {
     this.store = store;
     this.schemeService = schemeService;
     this.geminiService = geminiService;
     this.enquiryService = enquiryService;
+    this.rejectionService = rejectionService;
+    this.lifeEventService = lifeEventService;
   }
 
   /**
@@ -146,6 +160,28 @@ export class ConversationFlow {
       state.step = 'LANGUAGE_SELECTION';
       await this.store.set(senderId, state);
       return [TRANSLATIONS.en.welcome];
+    }
+
+    // Check if currently in specialized feature steps
+    if (state.step === 'REJECTION_RECOVERY') {
+      return this.handleRejectionState(senderId, state, trimmed);
+    }
+
+    if (state.step === 'LIFE_EVENT_DISCOVERY') {
+      return this.handleLifeEventState(senderId, state, trimmed);
+    }
+
+    // Check if the user triggered Rejection Recovery or Life-Event Discovery
+    const midFormSteps = ['ASK_GENDER', 'ASK_AGE', 'ASK_OCCUPATION', 'ASK_INCOME', 'ASK_CATEGORY'];
+    const isMidForm = midFormSteps.includes(state.step);
+
+    if (!isMidForm || trimmed.length > 25) {
+      if (this.isRejectionIntent(trimmed)) {
+        return this.handleRejectionIntent(senderId, state, trimmed);
+      }
+      if (this.isLifeEventIntent(trimmed)) {
+        return this.handleLifeEventIntent(senderId, state, trimmed);
+      }
     }
 
     // Direct question on first contact
@@ -862,4 +898,410 @@ export class ConversationFlow {
     messages.push(t.disclaimer);
     return messages;
   }
+
+  // --- Feature 1: Rejection Recovery Assistant Handlers ---
+
+  private isRejectionIntent(text: string): boolean {
+    if (!text || text.length < 3) return false;
+    const lower = text.toLowerCase().trim();
+
+    // Explicit command triggers
+    if (
+      lower === 'my application was rejected' ||
+      lower === 'application rejected' ||
+      lower === 'application rejected?' ||
+      lower === 'rejection recovery assistant' ||
+      lower === 'rejection assistant' ||
+      lower === 'मेरा आवेदन खारिज हो गया' ||
+      lower === 'आवेदन खारिज' ||
+      lower === 'अस्वीकार' ||
+      lower === 'ತಿರಸ್ಕೃತ' ||
+      lower === 'ನನ್ನ ಅರ್ಜಿ ತಿರಸ್ಕೃತಗೊಂಡಿದೆ' ||
+      lower === 'ತಿರಸ್ಕಾರ'
+    ) {
+      return true;
+    }
+
+    // Notice patterns: must have a rejection root word
+    const rejectionWords = [
+      'reject',
+      'rejected',
+      'rejection',
+      'khariz',
+      'kharij',
+      'खारिज',
+      'अस्वीकार',
+      'रद्द',
+      'ತಿರಸ್ಕೃತ',
+      'ತಿರಸ್ಕಾರ',
+    ];
+    const hasRejectionWord = rejectionWords.some((w) => lower.includes(w));
+    if (!hasRejectionWord) return false;
+
+    // And must have scheme / administrative context or be a full message
+    const contextWords = [
+      'application',
+      'form',
+      'pm-kisan',
+      'kisan',
+      'pmfby',
+      'pmay',
+      'ration',
+      'scholarship',
+      'registration',
+      'portal',
+      'status',
+      'pfms',
+      'dbt',
+      'aadhaar',
+      'due to',
+      'because',
+      'reason',
+      'notice',
+      'sms',
+      'beneficiary',
+      'dear applicant',
+      'अर्जी',
+      'आवेदन',
+      'ಖಾತೆ',
+      'ಅರ್ಜಿ',
+    ];
+    return contextWords.some((c) => lower.includes(c)) || lower.length >= 25;
+  }
+
+  private async handleRejectionIntent(
+    senderId: string,
+    state: ConversationState,
+    input: string
+  ): Promise<string[]> {
+    const lang = state.language || 'en';
+    const clean = input.trim();
+    const lower = clean.toLowerCase();
+
+    const isEntryPromptOnly =
+      lower === 'my application was rejected' ||
+      lower === 'application rejected' ||
+      lower === 'application rejected?' ||
+      lower === 'mera aavedan kharij' ||
+      lower === 'मेरा आवेदन खारिज हो गया' ||
+      lower === 'ನನ್ನ ಅರ್ಜಿ ತಿರಸ್ಕೃತಗೊಂಡಿದೆ' ||
+      lower === 'rejection recovery assistant' ||
+      (clean.length < 25 && !lower.includes('due to') && !lower.includes('reason'));
+
+    state.step = 'REJECTION_RECOVERY';
+
+    if (isEntryPromptOnly) {
+      await this.store.set(senderId, state);
+      return [
+        lang === 'kn'
+          ? `📋 *ಸ್ಕೀಮ್ ಸಾಥಿ — ತಿರಸ್ಕಾರ ಪರಿಹಾರ ಸಹಾಯಕ (Rejection Recovery Assistant)*\n\nನಿಮ್ಮ ಸರ್ಕಾರಿ ಯೋಜನೆಯ ಅರ್ಜಿ ಏಕೆ ತಿರಸ್ಕೃತಗೊಂಡಿದೆ ಎಂಬುದನ್ನು ಅರ್ಥಮಾಡಿಕೊಳ್ಳಲು ಮತ್ತು ಸರಿಪಡಿಸುವ ಅಧಿಕೃತ ಕ್ರಮಗಳನ್ನು ತಿಳಿಯಲು ನಾನು ಸಹಾಯ ಮಾಡುತ್ತೇನೆ.\n\n👉 *ದಯವಿಟ್ಟು ನಿಮಗೆ ಬಂದ SMS / ತಿರಸ್ಕಾರ ಸೂಚನೆಯನ್ನು ಇಲ್ಲಿ ಪೇಸ್ಟ್ ಮಾಡಿ ಅಥವಾ ನಿಮ್ಮದೇ ಮಾತುಗಳಲ್ಲಿ ವಿವರಿಸಿ* (ಯೋಜನೆಯ ಹೆಸರು ಮತ್ತು ರಾಜ್ಯ ತಿಳಿದಿದ್ದರೆ ತಿಳಿಸಿ).\n\n🔒 _ಗೌಪ್ಯತೆ ಸೂಚನೆ: ಆಧಾರ್ ಸಂಖ್ಯೆ, ಬ್ಯಾಂಕ್ ಖಾತೆ ಸಂಖ್ಯೆ ಅಥವಾ OTP ಗಳನ್ನು ಹಂಚಿಕೊಳ್ಳಬೇಡಿ._`
+          : lang === 'hi'
+          ? `📋 *स्कीम साथी — अस्वीकृति समाधान सहायक (Rejection Recovery Assistant)*\n\nमैं आपकी सरकारी योजना का आवेदन खारिज होने का कारण समझने, आधिकारिक शब्दावली को सरल बनाने और सही कदम उठाने में आपकी मदद करूँगा।\n\n👉 *कृपया आपको प्राप्त एसएमएस / अस्वीकृति संदेश यहाँ पेस्ट करें या अपने शब्दों में कारण लिखें* (यदि पता हो तो योजना का नाम और राज्य भी बताएं)।\n\n🔒 _गोपनीयता सूचना: कभी भी अपना आधार नंबर, बैंक खाता विवरण, पासवर्ड या ओटीपी साझा न करें।_`
+          : `📋 *Scheme Saathi — Rejection Recovery Assistant*\n\nI can help you understand why your government scheme application was rejected, decode official terminology into simple language, and guide you through verified next steps.\n\n👉 *Please paste the rejection SMS / portal notice here, or describe the reason in your own words* (optionally mention the scheme name and state if known).\n\n🔒 _Privacy Safety: Never share sensitive numbers like Aadhaar, bank account numbers, passwords, or OTPs._`,
+      ];
+    }
+
+    // Concrete rejection message provided
+    state.rejectionContext = {
+      lastNoticeText: clean,
+    };
+    await this.store.set(senderId, state);
+
+    const result = await this.rejectionService.analyzeNotice({
+      rawText: clean,
+      language: lang,
+      state: state.answers?.state,
+    });
+
+    const tips =
+      lang === 'kn'
+        ? `\n💡 _(ಆಯ್ಕೆಗಳು: ಸರಳ ವಿವರಣೆಗಾಗಿ *SIMPLIFY*, ಹಿಂದಿಯಲ್ಲಿ ನೋಡಲು *HINDI*, ಅಥವಾ ಹೊಸ ಹುಡುಕಾಟಕ್ಕಾಗಿ *RESTART* ಎಂದು ಟೈಪ್ ಮಾಡಿ)_`
+        : lang === 'hi'
+        ? `\n💡 _(विकल्प: और सरल भाषा के लिए *SIMPLIFY*, कन्नड़ के लिए *KANNADA*, या नई खोज के लिए *RESTART* लिखें)_`
+        : `\n💡 _(Options: Reply *SIMPLIFY* to explain more simply, *HINDI* for Hindi, *KANNADA* for Kannada, or *RESTART* to explore schemes)_`;
+
+    return [result.formattedMessage + '\n' + tips];
+  }
+
+  private async handleRejectionState(
+    senderId: string,
+    state: ConversationState,
+    input: string
+  ): Promise<string[]> {
+    const trimmed = input.trim();
+    const lower = trimmed.toLowerCase();
+
+    // Language toggle commands
+    if (lower === 'hindi' || lower === 'हिंदी' || lower === 'explain in hindi' || lower === 'हिंदी में बताएं') {
+      state.language = 'hi';
+      const textToAnalyze = state.rejectionContext?.lastNoticeText || 'Application rejected';
+      const res = await this.rejectionService.analyzeNotice({ rawText: textToAnalyze, language: 'hi' });
+      await this.store.set(senderId, state);
+      return [res.formattedMessage];
+    }
+
+    if (lower === 'kannada' || lower === 'ಕನ್ನಡ' || lower === 'explain in kannada' || lower === 'ಕನ್ನಡದಲ್ಲಿ ತಿಳಿಸಿ') {
+      state.language = 'kn';
+      const textToAnalyze = state.rejectionContext?.lastNoticeText || 'Application rejected';
+      const res = await this.rejectionService.analyzeNotice({ rawText: textToAnalyze, language: 'kn' });
+      await this.store.set(senderId, state);
+      return [res.formattedMessage];
+    }
+
+    if (lower === 'english' || lower === 'explain in english') {
+      state.language = 'en';
+      const textToAnalyze = state.rejectionContext?.lastNoticeText || 'Application rejected';
+      const res = await this.rejectionService.analyzeNotice({ rawText: textToAnalyze, language: 'en' });
+      await this.store.set(senderId, state);
+      return [res.formattedMessage];
+    }
+
+    if (lower === 'simplify' || lower === 'explain more simply' || lower === 'सरल' || lower === 'simple' || lower === 'ಸರಳ') {
+      const textToAnalyze = state.rejectionContext?.lastNoticeText || trimmed;
+      const res = await this.rejectionService.analyzeNotice({ rawText: textToAnalyze, language: state.language });
+      const simplified =
+        `🔍 *Simplified Citizen Action Plan:*\n\n` +
+        `1. *What happened:* ${res.meaning}\n` +
+        `2. *What to fix:* ${res.correctionsNeeded.join(', ') || 'Check name & IFSC in bank passbook against portal records'}\n` +
+        `3. *Where to go:* Visit ${res.officialPortalUrl || 'https://pgportal.gov.in'} or call helpline ${res.verifiedHelpline || '1800-115-526'}.\n\n` +
+        `⚠️ *Important:* No government employee will ever ask for money or OTPs to approve your application. Resubmit only through official government counters or portals.`;
+      return [simplified];
+    }
+
+    // User provided state name or clarifying details
+    const matchedState = matchIndianState(trimmed);
+    const priorText = state.rejectionContext?.lastNoticeText || '';
+    const combinedText = priorText ? `${priorText}. User State/Note: ${trimmed}` : trimmed;
+
+    state.rejectionContext = {
+      lastNoticeText: combinedText,
+      detectedState: matchedState || state.rejectionContext?.detectedState,
+    };
+    await this.store.set(senderId, state);
+
+    const res = await this.rejectionService.analyzeNotice({
+      rawText: combinedText,
+      state: matchedState || state.answers?.state,
+      language: state.language,
+    });
+
+    return [res.formattedMessage];
+  }
+
+  // --- Feature 2: Life-Event Benefit Discovery Handlers ---
+
+  private isLifeEventIntent(text: string): boolean {
+    if (!text || text.length < 3) return false;
+    const lower = text.toLowerCase().trim();
+
+    // Explicit command triggers
+    if (
+      lower === 'find schemes for my situation' ||
+      lower === 'life-event benefit discovery' ||
+      lower === 'life event' ||
+      lower === 'life-event' ||
+      lower === 'मेरी स्थिति' ||
+      lower === 'ನನ್ನ ಪರಿಸ್ಥಿತಿ'
+    ) {
+      return true;
+    }
+
+    // Natural language situation triggers
+    const lifeEventTriggers = [
+      'fasal',
+      'crop',
+      'kharab',
+      'baarish',
+      'damage',
+      'loss',
+      'flood',
+      'barish',
+      'सूखा',
+      'बाढ़',
+      'ಬೆಳೆ ಹಾನಿ',
+      'ಬೆಳೆ ನಾಶ',
+      'ಅತಿವೃಷ್ಟಿ',
+      'small business',
+      'start a business',
+      'chhota business',
+      'chhota vyapar',
+      'dukan',
+      'udyam',
+      'entrepreneur',
+      'ವ್ಯಾಪಾರ ಆರಂಭ',
+      'ಹೊಸ ಉದ್ಯಮ',
+      'daughter',
+      'college',
+      'scholarship',
+      'higher studies',
+      'university',
+      'padhai',
+      'ವಿದ್ಯಾರ್ಥಿವೇತನ',
+      'ಕಾಲೇಜು',
+      'pension',
+      'elderly',
+      'budhapa',
+      'vriddha',
+      'father is old',
+      'mother is old',
+      'ವೃದ್ಧಾಪ್ಯ ವೇತನ',
+      'ಪಿಂಚಣಿ',
+      'lost my job',
+      'lost job',
+      'berozgar',
+      'unemployed',
+      'naukri chali',
+      'ಉದ್ಯೋಗ ನಷ್ಟ',
+      'ಕೆಲಸ ಕಳೆದುಕೊಂಡೆ',
+      'farm equipment',
+      'small farm',
+      'tractor',
+      'kheti upkaran',
+      'ಕೃಷಿ ಉಪಕರಣ',
+      'help with housing',
+      'makan banana',
+      'ghar banana',
+      'healthcare',
+      'hospital',
+      'ilaj',
+      'bimar',
+      'ಗೃಹ ನಿರ್ಮಾಣ',
+      'ಆಸ್ಪತ್ರೆ ಖರ್ಚು',
+    ];
+
+    return lifeEventTriggers.some((t) => lower.includes(t));
+  }
+
+  private async handleLifeEventIntent(
+    senderId: string,
+    state: ConversationState,
+    input: string
+  ): Promise<string[]> {
+    const lang = state.language || 'en';
+    const clean = input.trim();
+    const lower = clean.toLowerCase();
+
+    const isEntryPromptOnly =
+      lower === 'find schemes for my situation' ||
+      lower === 'life-event benefit discovery' ||
+      lower === 'life event' ||
+      lower === 'situation' ||
+      lower === 'मेरी स्थिति के लिए योजनाएं';
+
+    state.step = 'LIFE_EVENT_DISCOVERY';
+
+    if (isEntryPromptOnly) {
+      await this.store.set(senderId, state);
+      return [
+        lang === 'kn'
+          ? `🌱 *ಸ್ಕೀಮ್ ಸಾಥಿ — ಜೀವನ ಘಟನೆಯ ಯೋಜನೆ ಅನ್ವೇಷಣೆ (Life-Event Benefit Discovery)*\n\nಯೋಜನೆಯ ಹೆಸರು ತಿಳಿದಿಲ್ಲದಿದ್ದರೂ ಪರವಾಗಿಲ್ಲ! ನಿಮ್ಮ ಪ್ರಸ್ತುತ ಪರಿಸ್ಥಿತಿ ಅಥವಾ ಅಗತ್ಯವನ್ನು ನಿಮ್ಮ ಸಾಮಾನ್ಯ ಮಾತುಗಳಲ್ಲಿ ವಿವರಿಸಿ.\n\nಉದಾಹರಣೆಗೆ:\n• "ಮಳೆಯಿಂದ ನನ್ನ ಬೆಳೆ ಹಾಳಾಗಿದೆ"\n• "ನಾನು ಸಣ್ಣ ವ್ಯಾಪಾರ ಆರಂಭಿಸಲು ಬಯಸುತ್ತೇನೆ"\n• "ನನ್ನ ಮಗಳು ಕಾಲೇಜಿಗೆ ಹೋಗುತ್ತಿದ್ದಾಳೆ, ಧನಸಹಾಯ ಬೇಕು"\n• "ನನ್ನ ವೃದ್ಧ ತಂದೆಗೆ ಪಿಂಚಣಿ ಬೇಕಾಗಿದೆ"`
+          : lang === 'hi'
+          ? `🌱 *स्कीम साथी — जीवन स्थिति लाभ खोज (Life-Event Benefit Discovery)*\n\nयदि आपको किसी सरकारी योजना का नाम नहीं पता है, तब भी कोई बात नहीं! अपनी वास्तविक स्थिति या आवश्यकता को अपनी आम बोलचाल में बताएं।\n\nउदाहरण:\n• "मेरी फसल बारिश की वजह से खराब हो गई है"\n• "मैं अपना छोटा बिजनेस शुरू करना चाहता हूँ"\n• "मेरी बेटी कॉलेज जा रही है और मुझे आर्थिक सहायता चाहिए"\n• "मेरे वृद्ध पिता को पेंशन सहायता की आवश्यकता है"`
+          : `🌱 *Scheme Saathi — Life-Event Benefit Discovery*\n\nEven if you do not know any scheme name, simply describe your real-life situation or need in ordinary language!\n\nExamples:\n• "Meri fasal baarish ki wajah se kharab ho gayi hai." (Crop loss)\n• "I want to start a small business but I have very little money."\n• "My daughter is going to college and I need financial assistance."\n• "My father is elderly and needs pension support."\n• "I lost my job and need help finding government benefits."`,
+      ];
+    }
+
+    state.lifeEventContext = {
+      lastSituation: clean,
+    };
+    await this.store.set(senderId, state);
+
+    const result = await this.lifeEventService.discoverBenefits({
+      userSituation: clean,
+      state: state.answers?.state,
+      occupation: state.answers?.occupation,
+      language: lang,
+    });
+
+    const tips =
+      lang === 'kn'
+        ? `\n💡 _(ಸುಳಿವು: ನಿಮ್ಮ ರಾಜ್ಯವನ್ನು ಟೈಪ್ ಮಾಡಿ (ಉದಾ: Karnataka), ವಿವರಣೆಗಾಗಿ *HINDI* ಅಥವಾ ಸಂಪೂರ್ಣ ಪರಿಶೀಲನೆಗಾಗಿ *ELIGIBILITY* ಎಂದು ಉತ್ತರಿಸಿ)_`
+        : lang === 'hi'
+        ? `\n💡 _(सुझाव: अपने राज्य का नाम लिखें (जैसे Uttar Pradesh, Bihar), कन्नड़ के लिए *KANNADA*, या विस्तृत फॉर्म के लिए *ELIGIBILITY* लिखें)_`
+        : `\n💡 _(Tip: Reply with your *State* (e.g., Uttar Pradesh, Karnataka) for localized state schemes, or type *ELIGIBILITY* to start the 7-step wizard)_`;
+
+    return [result.formattedMessage + '\n' + tips];
+  }
+
+  private async handleLifeEventState(
+    senderId: string,
+    state: ConversationState,
+    input: string
+  ): Promise<string[]> {
+    const trimmed = input.trim();
+    const lower = trimmed.toLowerCase();
+
+    // Check language toggles
+    if (lower === 'hindi' || lower === 'हिंदी' || lower === 'explain in hindi') {
+      state.language = 'hi';
+      const situation = state.lifeEventContext?.lastSituation || 'Crop loss or business assistance';
+      const res = await this.lifeEventService.discoverBenefits({
+        userSituation: situation,
+        state: state.answers?.state,
+        language: 'hi',
+      });
+      await this.store.set(senderId, state);
+      return [res.formattedMessage];
+    }
+
+    if (lower === 'kannada' || lower === 'ಕನ್ನಡ' || lower === 'explain in kannada') {
+      state.language = 'kn';
+      const situation = state.lifeEventContext?.lastSituation || 'Crop loss or business assistance';
+      const res = await this.lifeEventService.discoverBenefits({
+        userSituation: situation,
+        state: state.answers?.state,
+        language: 'kn',
+      });
+      await this.store.set(senderId, state);
+      return [res.formattedMessage];
+    }
+
+    if (lower === 'english' || lower === 'explain in english') {
+      state.language = 'en';
+      const situation = state.lifeEventContext?.lastSituation || 'Crop loss or business assistance';
+      const res = await this.lifeEventService.discoverBenefits({
+        userSituation: situation,
+        state: state.answers?.state,
+        language: 'en',
+      });
+      await this.store.set(senderId, state);
+      return [res.formattedMessage];
+    }
+
+    // Check if user wants to transition to the 7-question eligibility wizard
+    if (
+      lower === 'eligibility' ||
+      lower === 'check eligibility' ||
+      lower === 'check my eligibility' ||
+      lower === 'पात्रता' ||
+      lower === 'ಅರ್ಹತೆ'
+    ) {
+      state.step = 'CONSENT';
+      await this.store.set(senderId, state);
+      return [TRANSLATIONS[state.language || 'en'].consentPrompt];
+    }
+
+    // Check if user replied with their state to refine results
+    const matchedState = matchIndianState(trimmed);
+    const priorSituation = state.lifeEventContext?.lastSituation || trimmed;
+
+    state.lifeEventContext = {
+      lastSituation: priorSituation,
+      missingParameter: undefined,
+    };
+    if (matchedState) {
+      state.answers.state = matchedState;
+    }
+    await this.store.set(senderId, state);
+
+    const res = await this.lifeEventService.discoverBenefits({
+      userSituation: priorSituation,
+      state: matchedState || state.answers?.state,
+      occupation: state.answers?.occupation,
+      language: state.language || 'en',
+    });
+
+    return [res.formattedMessage];
+  }
 }
+

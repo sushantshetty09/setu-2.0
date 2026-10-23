@@ -57,6 +57,12 @@
         </div>
 
         <div class="header-right">
+          <button id="header-rejection-btn" class="feature-header-pill rejection" title="Application Rejected?">
+            <span>🚫</span> Rejection Help
+          </button>
+          <button id="header-life-event-btn" class="feature-header-pill life-event" title="Find Schemes for My Situation">
+            <span>🌱</span> Life Situation
+          </button>
           <button id="db-header-btn" class="db-header-pill" title="View Citizen Enquiries Database" aria-label="View Database">
             <span>📊</span> Database
           </button>
@@ -102,6 +108,8 @@
 
       <!-- Quick Action Suggestion Chips -->
       <div class="quick-chips-wrapper" id="quick-chips">
+        <button class="chip chip-feature-rejection" id="chip-rejection-btn" data-action="open-rejection">🚫 Application Rejected? (ಅರ್ಜಿ ತಿರಸ್ಕೃತ?)</button>
+        <button class="chip chip-feature-life-event" id="chip-life-event-btn" data-action="open-life-event">🌱 Find Schemes for My Situation (ನನ್ನ ಪರಿಸ್ಥಿತಿಗೆ ಯೋಜನೆ)</button>
         <button class="chip" data-text="HI">👋 Hi / Start / ನಮಸ್ಕಾರ</button>
         <button class="chip" data-text="1">1. Hindi (हिंदी)</button>
         <button class="chip" data-text="2">2. English</button>
@@ -165,13 +173,50 @@
         </div>
 
         <div class="features-list">
-          <h3>Try Asking Naturally:</h3>
+          <h3>Two New AI Features:</h3>
+          
+          <!-- Feature 1 Card -->
+          <div class="feature-box rejection-feature-box">
+            <div class="feature-box-header">
+              <span class="feature-badge red">Feature 1</span>
+              <h4>🚫 Rejection Recovery Assistant</h4>
+            </div>
+            <p class="feature-desc">Decode confusing government rejection SMS/notices into clear, verified action plans.</p>
+            <div class="sample-btn-group">
+              <button class="sample-chip" data-rej-sample="pm-kisan-name">PM-KISAN Name Mismatch</button>
+              <button class="sample-chip" data-rej-sample="pmfby-crop">PMFBY Crop Claim Rejected</button>
+              <button class="sample-chip" data-rej-sample="pmay-income">PMAY Income Ceiling</button>
+            </div>
+            <button id="open-rejection-modal-btn" class="feature-action-btn red">
+              <span>🛠️</span> Open Rejection Recovery Assistant
+            </button>
+          </div>
+
+          <!-- Feature 2 Card -->
+          <div class="feature-box life-event-feature-box">
+            <div class="feature-box-header">
+              <span class="feature-badge green">Feature 2</span>
+              <h4>🌱 Life-Event Benefit Discovery</h4>
+            </div>
+            <p class="feature-desc">Discover welfare schemes by describing real-life situations in natural language.</p>
+            <div class="sample-btn-group">
+              <button class="sample-chip" data-le-sample="crop-damage">"Meri fasal baarish se kharab ho gayi"</button>
+              <button class="sample-chip" data-le-sample="small-business">"Start a small business with little money"</button>
+              <button class="sample-chip" data-le-sample="daughter-college">"Daughter going to college"</button>
+              <button class="sample-chip" data-le-sample="elderly-pension">"Elderly father needs pension"</button>
+            </div>
+            <button id="open-life-event-modal-btn" class="feature-action-btn green">
+              <span>✨</span> Open Life-Event Discovery
+            </button>
+          </div>
+
+          <h3>Try Natural Chat Prompts:</h3>
           <ul>
             <li><button class="prompt-sample" data-text="ಕರ್ನಾಟಕದ ರೈತರಿಗೆ ಯಾವ ಯೋಜನೆಗಳು ಲಭ್ಯವಿವೆ?">"ಕರ್ನಾಟಕದ ರೈತರಿಗೆ ಯಾವ ಯೋಜನೆಗಳು ಲಭ್ಯವಿವೆ?" (ಕನ್ನಡ)</button></li>
             <li><button class="prompt-sample" data-text="Main UP ka kisan hoon mujhe tractor subsidy chahiye">"Main UP ka kisan hoon mujhe tractor subsidy chahiye"</button></li>
             <li><button class="prompt-sample" data-text="What documents are needed for PM-KISAN?">"What documents are needed for PM-KISAN?"</button></li>
-            <li><button class="prompt-sample" data-text="60 saal ke kisan ke liye pension yojana batao">"60 saal ke kisan ke liye pension yojana batao"</button></li>
-            <li><button class="prompt-sample" data-text="How much subsidy on solar pumps under PM-KUSUM?">"How much subsidy on solar pumps under PM-KUSUM?"</button></li>
+            <li><button class="prompt-sample" data-text="Meri fasal baarish ki wajah se kharab ho gayi hai.">"Meri fasal baarish ki wajah se kharab ho gayi hai."</button></li>
+            <li><button class="prompt-sample" data-text="My application for PM-KISAN was rejected due to beneficiary name mismatch with Aadhaar database.">"PM-KISAN application rejected due to name mismatch"</button></li>
           </ul>
         </div>
 
@@ -284,6 +329,307 @@
           REST API: <code>GET /api/enquiries</code> &bull; <code>GET /api/enquiries/stats</code>
         </div>
       </footer>
+    </div>
+  </div>
+
+  <!-- Feature 1: Rejection Recovery Assistant Modal -->
+  <div id="rejection-modal" class="feature-modal" aria-hidden="true" style="display: none;">
+    <div class="feature-modal-overlay" id="rejection-modal-overlay"></div>
+    <div class="feature-modal-dialog">
+      <header class="feature-modal-header red">
+        <div class="feature-modal-title-group">
+          <div class="feature-modal-badge red">🚫 AI Feature 1</div>
+          <h2>Rejection Recovery Assistant</h2>
+          <p class="feature-modal-subtitle">Decode rejection notices, understand official reasons, and follow a verified correction roadmap.</p>
+        </div>
+        <button class="feature-modal-close" id="rejection-modal-close" title="Close Modal">&times;</button>
+      </header>
+
+      <div class="feature-modal-body">
+        <!-- Input Form Section -->
+        <div class="feature-form-panel">
+          <div class="privacy-warning-banner">
+            <span>🔒</span>
+            <span><strong>Citizen Privacy Shield:</strong> Never enter your 12-digit Aadhaar number, bank account number, passwords, or OTPs. Notices are analyzed in-memory and never stored.</span>
+          </div>
+
+          <div class="quick-samples-row">
+            <span class="sample-label">Quick Test Notices:</span>
+            <button type="button" class="rej-quick-sample" data-sample="pm-kisan">PM-KISAN Name Mismatch</button>
+            <button type="button" class="rej-quick-sample" data-sample="pmfby">PMFBY 72h Crop Claim</button>
+            <button type="button" class="rej-quick-sample" data-sample="dbt">NPCI / Bank Inactive</button>
+            <button type="button" class="rej-quick-sample" data-sample="ambiguous">Ambiguous "Rejected"</button>
+          </div>
+
+          <div class="form-group">
+            <label for="rej-text-input">Rejection Notice / SMS Message / Stated Reason:</label>
+            <textarea 
+              id="rej-text-input" 
+              class="feature-textarea" 
+              rows="4" 
+              placeholder="Paste the SMS or portal message here (e.g. 'Your PM-KISAN application was rejected due to beneficiary name mismatch with Aadhaar database')..."
+            ></textarea>
+          </div>
+
+          <div class="form-row three-col">
+            <div class="form-group">
+              <label for="rej-scheme-select">Scheme (Optional):</label>
+              <select id="rej-scheme-select" class="feature-select">
+                <option value="">Auto-Detect Scheme</option>
+                <option value="PM-KISAN">PM-KISAN (Kisan Samman Nidhi)</option>
+                <option value="PMFBY">PMFBY (Crop Insurance)</option>
+                <option value="PMAY">PMAY (Housing / Awas Yojana)</option>
+                <option value="Ayushman Bharat">Ayushman Bharat (PM-JAY)</option>
+                <option value="National Scholarship Portal">National Scholarship Portal (NSP)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="rej-state-select">State / UT (Optional):</label>
+              <select id="rej-state-select" class="feature-select">
+                <option value="">All / Pan-India</option>
+                <option value="Karnataka">Karnataka</option>
+                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                <option value="Maharashtra">Maharashtra</option>
+                <option value="Bihar">Bihar</option>
+                <option value="Rajasthan">Rajasthan</option>
+                <option value="Madhya Pradesh">Madhya Pradesh</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="rej-lang-select">Language:</label>
+              <select id="rej-lang-select" class="feature-select">
+                <option value="en">English</option>
+                <option value="hi">हिंदी (Hindi)</option>
+                <option value="kn">ಕನ್ನಡ (Kannada)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group upload-group">
+            <label for="rej-file-input">Or Upload Rejection Notice / Screenshot (Analyzed with Gemini Vision):</label>
+            <input type="file" id="rej-file-input" accept="image/*" class="file-input" />
+            <div id="rej-preview-container" class="preview-box" style="display: none;">
+              <img id="rej-image-preview" src="" alt="Notice Preview" />
+              <button type="button" id="rej-remove-image-btn" class="remove-img-btn">✕ Remove</button>
+            </div>
+          </div>
+
+          <div class="form-actions-row">
+            <button type="button" id="rej-analyze-btn" class="primary-action-btn red">
+              <span>🔍</span> Analyze Rejection Notice
+            </button>
+            <button type="button" id="rej-clear-btn" class="secondary-btn">Clear</button>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="rej-loading" class="feature-loading" style="display: none;">
+          <div class="spinner red"></div>
+          <p>Analyzing rejection notice against official guidelines and verified government grievance portals...</p>
+        </div>
+
+        <!-- Results Display Section -->
+        <div id="rej-result-container" class="feature-result-container" style="display: none;">
+          <!-- Section A -->
+          <div class="result-card section-a">
+            <div class="section-tag">A. What the Rejection Message Means</div>
+            <p id="rej-res-meaning" class="meaning-text"></p>
+          </div>
+
+          <!-- Section B -->
+          <div class="result-card section-b">
+            <div class="section-tag">B. Why This May Have Happened</div>
+            <div class="reason-block">
+              <strong>Stated Reason (from Notice):</strong>
+              <p id="rej-res-stated" class="stated-text"></p>
+            </div>
+            <div class="reason-block" id="rej-possible-block">
+              <strong>Possible Explanations (Grounded Context):</strong>
+              <ul id="rej-res-possible" class="bullet-list"></ul>
+            </div>
+          </div>
+
+          <!-- Section C -->
+          <div class="result-card section-c">
+            <div class="section-tag">C. What You Should Do Now (Action Plan)</div>
+            <ol id="rej-res-action-plan" class="numbered-list"></ol>
+            <div class="docs-checklist">
+              <strong>📄 Documents / Information to Check:</strong>
+              <ul id="rej-res-docs" class="bullet-list"></ul>
+            </div>
+          </div>
+
+          <!-- Section D -->
+          <div class="result-card section-d">
+            <div class="section-tag">D. Official Next Steps & Verified Portals</div>
+            <div class="portals-grid">
+              <div class="portal-item">
+                <span class="portal-label">Official Portal:</span>
+                <a id="rej-res-portal-link" href="#" target="_blank" rel="noopener noreferrer" class="portal-btn">
+                  <span id="rej-res-portal-name">Official Portal</span> ↗
+                </a>
+              </div>
+              <div class="portal-item">
+                <span class="portal-label">Grievance / Appeal Channel:</span>
+                <a id="rej-res-grievance-link" href="#" target="_blank" rel="noopener noreferrer" class="portal-btn grievance">
+                  <span id="rej-res-grievance-name">Grievance Portal</span> ↗
+                </a>
+              </div>
+            </div>
+            <div id="rej-res-helpline-box" class="helpline-callout">
+              📞 <strong>Verified Helpline:</strong> <span id="rej-res-helpline"></span>
+            </div>
+            <div id="rej-res-deadline-box" class="deadline-callout" style="display: none;">
+              ⏱️ <strong>Verified Deadline:</strong> <span id="rej-res-deadline"></span>
+            </div>
+          </div>
+
+          <!-- Section E -->
+          <div class="result-card section-e">
+            <div class="section-tag">E. What to Do If the Problem Continues</div>
+            <ul id="rej-res-escalation" class="bullet-list"></ul>
+          </div>
+
+          <!-- Follow-up Clarification (if ambiguous) -->
+          <div id="rej-res-clarification" class="clarification-callout" style="display: none;">
+            <h4>❓ Targeted Clarification Needed:</h4>
+            <p>The notice did not state an explicit official reason code. To guide you precisely, please verify:</p>
+            <ul id="rej-res-questions" class="bullet-list"></ul>
+          </div>
+
+          <!-- Action Buttons Toolbar -->
+          <div class="result-toolbar">
+            <button type="button" class="action-pill-btn" id="rej-act-hindi">🇮🇳 Explain in Hindi</button>
+            <button type="button" class="action-pill-btn" id="rej-act-kannada">🟡 Explain in Kannada</button>
+            <button type="button" class="action-pill-btn" id="rej-act-simple">💡 Explain More Simply</button>
+            <button type="button" class="action-pill-btn primary" id="rej-act-send-chat">💬 Send to WhatsApp Chat</button>
+          </div>
+
+          <div class="disclaimer-note">
+            ⚠️ <strong>Guidance Notice:</strong> This analysis is an informational interpretation of government scheme guidelines and does not constitute an official government decision.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feature 2: Life-Event Benefit Discovery Modal -->
+  <div id="life-event-modal" class="feature-modal" aria-hidden="true" style="display: none;">
+    <div class="feature-modal-overlay" id="life-event-modal-overlay"></div>
+    <div class="feature-modal-dialog">
+      <header class="feature-modal-header green">
+        <div class="feature-modal-title-group">
+          <div class="feature-modal-badge green">🌱 AI Feature 2</div>
+          <h2>Life-Event Benefit Discovery</h2>
+          <p class="feature-modal-subtitle">Describe your real-life situation in ordinary words — even without knowing scheme names.</p>
+        </div>
+        <button class="feature-modal-close" id="life-event-modal-close" title="Close Modal">&times;</button>
+      </header>
+
+      <div class="feature-modal-body">
+        <!-- Form Section -->
+        <div class="feature-form-panel">
+          <div class="quick-samples-row">
+            <span class="sample-label">Real-Life Situations:</span>
+            <button type="button" class="le-quick-preset" data-text="Meri fasal baarish ki वजह se kharab ho gayi hai.">🌾 Crop Loss / Rain</button>
+            <button type="button" class="le-quick-preset" data-text="I want to start a small business but I have very little money.">💼 Small Business</button>
+            <button type="button" class="le-quick-preset" data-text="My daughter is going to college and I need financial assistance.">🎓 Daughter College</button>
+            <button type="button" class="le-quick-preset" data-text="My father is elderly and needs pension support.">👴 Elderly Pension</button>
+            <button type="button" class="le-quick-preset" data-text="I want to buy equipment for my small farm.">🚜 Farm Equipment</button>
+            <button type="button" class="le-quick-preset" data-text="I lost my job and need help finding government benefits.">💼 Job Loss</button>
+          </div>
+
+          <div class="form-group">
+            <label for="le-situation-input">Describe Your Real-Life Situation or Need:</label>
+            <textarea 
+              id="le-situation-input" 
+              class="feature-textarea" 
+              rows="3" 
+              placeholder="e.g. 'Meri fasal baarish ki wajah se kharab ho gayi hai' or 'I want to start a small business but I have very little money'..."
+            ></textarea>
+          </div>
+
+          <div class="form-row three-col">
+            <div class="form-group">
+              <label for="le-state-select">State / UT (Optional):</label>
+              <select id="le-state-select" class="feature-select">
+                <option value="">All / Pan-India</option>
+                <option value="Karnataka">Karnataka</option>
+                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                <option value="Maharashtra">Maharashtra</option>
+                <option value="Bihar">Bihar</option>
+                <option value="Rajasthan">Rajasthan</option>
+                <option value="Madhya Pradesh">Madhya Pradesh</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="le-occ-select">Occupation (Optional):</label>
+              <select id="le-occ-select" class="feature-select">
+                <option value="">Any / Not Specified</option>
+                <option value="Farmer">Farmer</option>
+                <option value="Student">Student</option>
+                <option value="Business Owner">Business Owner / Self-Employed</option>
+                <option value="Worker">Worker / Labourer</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="le-lang-select">Language:</label>
+              <select id="le-lang-select" class="feature-select">
+                <option value="en">English</option>
+                <option value="hi">हिंदी (Hindi)</option>
+                <option value="kn">ಕನ್ನಡ (Kannada)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-actions-row">
+            <button type="button" id="le-discover-btn" class="primary-action-btn green">
+              <span>✨</span> Discover Matching Government Benefits
+            </button>
+            <button type="button" id="le-clear-btn" class="secondary-btn">Clear</button>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="le-loading" class="feature-loading" style="display: none;">
+          <div class="spinner green"></div>
+          <p>Analyzing life situation with Gemini AI and matching against verified schemes database...</p>
+        </div>
+
+        <!-- Results Display Section -->
+        <div id="le-result-container" class="feature-result-container" style="display: none;">
+          <div class="life-event-summary-banner">
+            <div class="summary-chip" id="le-res-event">Event: Crop Loss</div>
+            <div class="summary-chip need" id="le-res-need">Need: Disaster Relief</div>
+            <div class="summary-chip cat" id="le-res-cat">Category: Agriculture</div>
+          </div>
+          <p id="le-res-explanation" class="life-event-desc"></p>
+
+          <!-- Cards Grid -->
+          <div id="le-cards-grid" class="scheme-cards-grid">
+            <!-- Dynamically populated -->
+          </div>
+
+          <!-- Missing Details Notice -->
+          <div id="le-missing-details-box" class="missing-details-callout" style="display: none;">
+            <span>ℹ️</span>
+            <span id="le-missing-details-text"></span>
+          </div>
+
+          <!-- Action Toolbar -->
+          <div class="result-toolbar">
+            <button type="button" class="action-pill-btn" id="le-act-hindi">🇮🇳 Explain in Hindi</button>
+            <button type="button" class="action-pill-btn" id="le-act-kannada">🟡 Explain in Kannada</button>
+            <button type="button" class="action-pill-btn primary" id="le-act-chat-eligibility">🎯 Check Eligibility in Chat</button>
+            <button type="button" class="action-pill-btn" id="le-act-send-chat">💬 Send to WhatsApp Chat</button>
+          </div>
+
+          <div class="disclaimer-note">
+            ⚠️ <strong>Guidance Notice:</strong> Schemes shown are relevant recommendations based on your situation. Full eligibility depends on official department verification.
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

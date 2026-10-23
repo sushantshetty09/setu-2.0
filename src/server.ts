@@ -5,6 +5,8 @@ import { healthRouter } from './routes/health';
 import { webhookRouter } from './routes/webhook';
 import { simulateRouter } from './routes/simulate';
 import { enquiriesRouter } from './routes/enquiries';
+import { rejectionRouter } from './routes/rejection';
+import { lifeEventsRouter } from './routes/lifeEvents';
 import { RequestWithRawBody } from './middleware/verifyMetaSignature';
 
 // Load environment variables from .env
@@ -28,6 +30,8 @@ app.use('/health', healthRouter);
 app.use('/webhook', webhookRouter);
 app.use('/simulate', simulateRouter);
 app.use('/api/enquiries', enquiriesRouter);
+app.use('/api/rejection', rejectionRouter);
+app.use('/api/life-events', lifeEventsRouter);
 
 // Serve static assets for the WhatsApp Web demo UI
 app.use(express.static(path.join(process.cwd(), 'public')));

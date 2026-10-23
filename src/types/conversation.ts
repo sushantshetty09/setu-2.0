@@ -14,6 +14,8 @@ export type ConversationStep =
   | 'ASK_INCOME'
   | 'ASK_CATEGORY'
   | 'RESULTS'
+  | 'REJECTION_RECOVERY'
+  | 'LIFE_EVENT_DISCOVERY'
   | 'STOPPED';
 
 export interface UserAnswers {
@@ -40,6 +42,17 @@ export interface ConversationState {
   history: ConversationHistoryEntry[];
   chatHistory?: Array<{ role: 'user' | 'model'; text: string }>;
   lastShownSchemes?: string[];
+  rejectionContext?: {
+    lastNoticeText?: string;
+    detectedScheme?: string;
+    detectedState?: string;
+    awaitingClarification?: boolean;
+  };
+  lifeEventContext?: {
+    lastSituation?: string;
+    identifiedCategory?: string;
+    missingParameter?: 'state' | 'occupation';
+  };
   lastMessageId?: string;
   updatedAt: number;
 }

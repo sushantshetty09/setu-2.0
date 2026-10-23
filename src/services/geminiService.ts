@@ -4,6 +4,8 @@ import { GoogleGenAI } from '@google/genai';
 import { SCHEMES_DATABASE } from '../data/schemesDatabase';
 import { GenderType, IncomeBracket, Scheme, UserProfile } from '../types/scheme';
 import { matchIndianState } from '../chatbot/translations';
+import { defaultRejectionRecoveryService } from './rejectionRecoveryService';
+import { defaultLifeEventService } from './lifeEventService';
 
 export interface ChatMessage {
   role: 'user' | 'model';
@@ -641,6 +643,22 @@ ${catalogueSummary}`;
     }
     response += `⚠️ *Notice:* Matches are guidance suggestions. For deeper details, simply ask: "Tell me more about [Scheme Name]".`;
     return response;
+  }
+
+  /**
+   * Feature 1: Rejection Recovery Assistant
+   * Analyzes an official rejection notice and generates an actionable recovery plan.
+   */
+  async analyzeRejectionNotice(request: import('../types/rejection').RejectionAnalysisRequest): Promise<import('../types/rejection').RejectionAnalysisResult> {
+    return defaultRejectionRecoveryService.analyzeNotice(request);
+  }
+
+  /**
+   * Feature 2: Life-Event Benefit Discovery
+   * Matches real-life situations to verified government welfare schemes.
+   */
+  async discoverLifeEventBenefits(request: import('../types/lifeEvent').LifeEventDiscoveryRequest): Promise<import('../types/lifeEvent').LifeEventDiscoveryResult> {
+    return defaultLifeEventService.discoverBenefits(request);
   }
 }
 
