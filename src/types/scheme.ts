@@ -30,6 +30,9 @@ export interface Scheme {
   applicationSteps: string[];
   officialUrl: string;
   lastVerifiedAt: string; // ISO date or formatted date
+  targetGroups?: string[];
+  verificationStatus?: string;
+  sourceNote?: string;
 }
 
 export interface UserProfile {
