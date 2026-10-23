@@ -1,6 +1,6 @@
 import { SchemeCategory, OccupationType } from './scheme';
 
-export type Language = 'en' | 'hi';
+export type Language = 'en' | 'hi' | 'kn';
 
 export type ConversationStep =
   | 'WELCOME'

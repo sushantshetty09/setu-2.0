@@ -75,7 +75,10 @@ export class ConversationFlow {
       normalized === 'stop' ||
       normalized === 'रोकें' ||
       normalized === 'रद्द' ||
-      normalized === 'बंद'
+      normalized === 'बंद' ||
+      normalized === 'ನಿಲ್ಲಿಸಿ' ||
+      normalized === 'ರದ್ದು' ||
+      normalized === 'ಬೇಡ'
     ) {
       state.consent = false;
       state.answers = {};
@@ -86,7 +89,13 @@ export class ConversationFlow {
     }
 
     // Command: HELP
-    if (normalized === 'help' || normalized === 'मदद' || normalized === '?') {
+    if (
+      normalized === 'help' ||
+      normalized === 'मदद' ||
+      normalized === '?' ||
+      normalized === 'ಸಹಾಯ' ||
+      normalized === 'ನೆರವು'
+    ) {
       return [t.helpMessage];
     }
 
@@ -94,7 +103,9 @@ export class ConversationFlow {
     if (
       normalized === 'restart' ||
       normalized === 'रीस्टार्ट' ||
-      normalized === 'पुनः'
+      normalized === 'पुनः' ||
+      normalized === 'ಮರುಪ್ರಾರಂಭ' ||
+      normalized === 'ಆರಂಭ'
     ) {
       state = createInitialState(senderId, state.language);
       state.step = 'LANGUAGE_SELECTION';
@@ -103,18 +114,25 @@ export class ConversationFlow {
     }
 
     // Command: BACK
-    if (normalized === 'back' || normalized === 'वापस' || normalized === 'पीछे') {
+    if (
+      normalized === 'back' ||
+      normalized === 'वापस' ||
+      normalized === 'पीछे' ||
+      normalized === 'ಹಿಂದೆ'
+    ) {
       return this.handleBackCommand(senderId, state);
     }
 
-    // Welcome triggers: HI, HELLO, START, नमस्ते
+    // Welcome triggers: HI, HELLO, START, नमस्ते, ನಮಸ್ಕಾರ
     if (
       normalized === 'hi' ||
       normalized === 'hello' ||
       normalized === 'start' ||
       normalized === 'नमस्ते' ||
       normalized === 'हेलो' ||
-      normalized === 'हाय'
+      normalized === 'हाय' ||
+      normalized === 'ನಮಸ್ಕಾರ' ||
+      normalized === 'ನಮಸ್ತೆ'
     ) {
       state = createInitialState(senderId, state.language);
       state.step = 'LANGUAGE_SELECTION';
@@ -134,7 +152,7 @@ export class ConversationFlow {
         });
         return [
           aiAnswer,
-          `\n💡 _(Tip: Reply *1* for Hindi or *2* for English anytime to start the personalized eligibility check)_`,
+          `\n💡 _(Tip: Reply *1* for Hindi, *2* for English, or *3* for Kannada (ಕನ್ನಡ) anytime to start the personalized eligibility check)_`,
         ];
       }
       state = createInitialState(senderId, state.language);
@@ -180,7 +198,9 @@ export class ConversationFlow {
           return [aiAnswer];
         }
         return [
-          lang === 'hi'
+          lang === 'kn'
+            ? `ನೀವು ಈಗಾಗಲೇ ಫಲಿತಾಂಶಗಳನ್ನು ಪರಿಶೀಲಿಸಿದ್ದೀರಿ.\n• ಯಾವುದೇ ಯೋಜನೆಯ ಬಗ್ಗೆ ಹೆಚ್ಚಿನ ವಿವರಗಳನ್ನು ಕೇಳಿ (ಉದಾ: "PM-KISAN ಬಗ್ಗೆ ಹೆಚ್ಚಿನ ಮಾಹಿತಿ ನೀಡಿ" ಅಥವಾ "ಅರ್ಜಿ ಸಲ್ಲಿಸುವುದು ಹೇಗೆ?")\n• ಹೊಸ ಹುಡುಕಾಟಕ್ಕಾಗಿ *RESTART* ಎಂದು ಟೈಪ್ ಮಾಡಿ.\n• ವರ್ಗ ಬದಲಾಯಿಸಲು *BACK* ಎಂದು ಟೈಪ್ ಮಾಡಿ.\n• ಆಜ್ಞೆಗಳಿಗಾಗಿ *HELP* ಎಂದು ಟೈಪ್ ಮಾಡಿ.`
+            : lang === 'hi'
             ? `आप पहले ही परिणाम देख चुके हैं।\n• किसी भी योजना के बारे में विस्तृत जानकारी पूछें (जैसे: "PM-KISAN के बारे में और बताओ" या "आवेदन कैसे करें?")\n• दोबारा खोजने के लिए *RESTART* लिखें।\n• श्रेणी बदलने के लिए *BACK* लिखें।\n• सहायता के लिए *HELP* लिखें।`
             : `You have completed the enquiry.\n• Ask for more details on any scheme (e.g. "Tell me more about PM-KISAN" or "How to apply?")\n• Type *RESTART* to start a new search.\n• Type *BACK* to change category.\n• Type *HELP* for available commands.`,
         ];
@@ -210,6 +230,14 @@ export class ConversationFlow {
       chosenLang = 'hi';
     } else if (trimmed === '2' || trimmed === 'english' || trimmed === 'अंग्रेजी') {
       chosenLang = 'en';
+    } else if (
+      trimmed === '3' ||
+      trimmed === 'kannada' ||
+      trimmed === 'ಕನ್ನಡ' ||
+      trimmed === 'kan' ||
+      trimmed === 'kn'
+    ) {
+      chosenLang = 'kn';
     }
 
     if (!chosenLang) {
@@ -222,7 +250,7 @@ export class ConversationFlow {
         });
         return [
           aiAnswer,
-          `\n💡 _(Tip: Reply *1* for Hindi or *2* for English anytime to start the personalized eligibility check)_`,
+          `\n💡 _(Tip: Reply *1* for Hindi, *2* for English, or *3* for Kannada (ಕನ್ನಡ) anytime to start the personalized eligibility check)_`,
         ];
       }
       return [TRANSLATIONS.en.selectLanguage];
@@ -244,14 +272,17 @@ export class ConversationFlow {
     const t = TRANSLATIONS[lang];
     const trimmed = input.trim().toLowerCase();
 
-    // Check Yes (1, yes, y, हाँ, haan)
+    // Check Yes (1, yes, y, हाँ, haan, ಹೌದು, ಸರಿ, ಒಪ್ಪಿಗೆ)
     if (
       trimmed === '1' ||
       trimmed === 'yes' ||
       trimmed === 'y' ||
       trimmed === 'हाँ' ||
       trimmed === 'हां' ||
-      trimmed === 'haan'
+      trimmed === 'haan' ||
+      trimmed === 'ಹೌದು' ||
+      trimmed === 'ಸರಿ' ||
+      trimmed === 'ಒಪ್ಪಿಗೆ'
     ) {
       state.consent = true;
       state.step = 'ASK_STATE';
@@ -260,13 +291,15 @@ export class ConversationFlow {
       return [t.askState];
     }
 
-    // Check No (2, no, n, नहीं, nahi)
+    // Check No (2, no, n, नहीं, nahi, ಇಲ್ಲ, ಬೇಡ)
     if (
       trimmed === '2' ||
       trimmed === 'no' ||
       trimmed === 'n' ||
       trimmed === 'नहीं' ||
-      trimmed === 'nahi'
+      trimmed === 'nahi' ||
+      trimmed === 'ಇಲ್ಲ' ||
+      trimmed === 'ಬೇಡ'
     ) {
       state.consent = false;
       state.answers = {};
@@ -352,14 +385,44 @@ export class ConversationFlow {
       occupation = OCCUPATION_MAP[num];
     } else {
       const lower = trimmed.toLowerCase();
-      if (lower.includes('farm') || lower.includes('किसान')) occupation = 'Farmer';
-      else if (lower.includes('stud') || lower.includes('छात्र') || lower.includes('विद्यार्थी'))
+      if (
+        lower.includes('farm') ||
+        lower.includes('किसान') ||
+        lower.includes('ರೈತ') ||
+        lower.includes('ಕೃಷಿಕ')
+      )
+        occupation = 'Farmer';
+      else if (
+        lower.includes('stud') ||
+        lower.includes('छात्र') ||
+        lower.includes('विद्यार्थी') ||
+        lower.includes('ವಿದ್ಯಾರ್ಥಿ')
+      )
         occupation = 'Student';
-      else if (lower.includes('work') || lower.includes('labour') || lower.includes('मज़दूर') || lower.includes('श्रमिक'))
+      else if (
+        lower.includes('work') ||
+        lower.includes('labour') ||
+        lower.includes('मज़दूर') ||
+        lower.includes('श्रमिक') ||
+        lower.includes('ಕಾರ್ಮಿಕ') ||
+        lower.includes('ಕೂಲಿ')
+      )
         occupation = 'Worker';
-      else if (lower.includes('busin') || lower.includes('shop') || lower.includes('व्यापार') || lower.includes('स्वरोजगार'))
+      else if (
+        lower.includes('busin') ||
+        lower.includes('shop') ||
+        lower.includes('व्यापार') ||
+        lower.includes('स्वरोजगार') ||
+        lower.includes('ವ್ಯಾಪಾರ') ||
+        lower.includes('ಸ್ವಯಂ')
+      )
         occupation = 'Business Owner';
-      else if (lower.includes('oth') || lower.includes('अन्य'))
+      else if (
+        lower.includes('oth') ||
+        lower.includes('अन्य') ||
+        lower.includes('ಇತರೆ') ||
+        lower.includes('ಬೇರೆ')
+      )
         occupation = 'Other';
     }
 
@@ -396,14 +459,62 @@ export class ConversationFlow {
       category = CATEGORY_MAP[num];
     } else {
       const lower = trimmed.toLowerCase();
-      if (lower.includes('agri') || lower.includes('कृषि')) category = 'Agriculture';
-      else if (lower.includes('edu') || lower.includes('शिक्षा')) category = 'Education';
-      else if (lower.includes('emp') || lower.includes('job') || lower.includes('रोजगार')) category = 'Employment';
-      else if (lower.includes('hous') || lower.includes('आवास')) category = 'Housing';
-      else if (lower.includes('health') || lower.includes('स्वास्थ्य')) category = 'Healthcare';
-      else if (lower.includes('pen') || lower.includes('पेंशन')) category = 'Pension';
-      else if (lower.includes('wom') || lower.includes('महिला')) category = "Women's Welfare";
-      else if (lower.includes('oth') || lower.includes('अन्य')) category = 'Other';
+      if (
+        lower.includes('agri') ||
+        lower.includes('कृषि') ||
+        lower.includes('ಕೃಷಿ') ||
+        lower.includes('ಬೆಳೆ')
+      )
+        category = 'Agriculture';
+      else if (
+        lower.includes('edu') ||
+        lower.includes('शिक्षा') ||
+        lower.includes('ಶಿಕ್ಷಣ') ||
+        lower.includes('ಶಾಲೆ')
+      )
+        category = 'Education';
+      else if (
+        lower.includes('emp') ||
+        lower.includes('job') ||
+        lower.includes('रोजगार') ||
+        lower.includes('ಉದ್ಯೋಗ') ||
+        lower.includes('ಕೆಲಸ')
+      )
+        category = 'Employment';
+      else if (
+        lower.includes('hous') ||
+        lower.includes('आवास') ||
+        lower.includes('ವಸತಿ') ||
+        lower.includes('ಮನೆ')
+      )
+        category = 'Housing';
+      else if (
+        lower.includes('health') ||
+        lower.includes('स्वास्थ्य') ||
+        lower.includes('ಆರೋಗ್ಯ') ||
+        lower.includes('ಚಿಕಿತ್ಸೆ')
+      )
+        category = 'Healthcare';
+      else if (
+        lower.includes('pen') ||
+        lower.includes('पेंशन') ||
+        lower.includes('ಪಿಂಚಣಿ')
+      )
+        category = 'Pension';
+      else if (
+        lower.includes('wom') ||
+        lower.includes('महिला') ||
+        lower.includes('ಮಹಿಳಾ') ||
+        lower.includes('ಮಹಿಳೆ')
+      )
+        category = "Women's Welfare";
+      else if (
+        lower.includes('oth') ||
+        lower.includes('अन्य') ||
+        lower.includes('ಇತರೆ') ||
+        lower.includes('ಸಾಮಾನ್ಯ')
+      )
+        category = 'Other';
     }
 
     if (!category) {

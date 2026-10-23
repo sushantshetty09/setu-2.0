@@ -24,6 +24,17 @@ describe('Gemini AI Scheme Advisor Service', () => {
     expect(profile.isQuestion).toBe(true);
   });
 
+  it('should extract profile parameters from Kannada queries', async () => {
+    const text = 'ನಾನು ಕರ್ನಾಟಕದ 35 ವರ್ಷದ ರೈತ ನನಗೆ ಕೃಷಿ ಯೋಜನೆಗಳು ಬೇಕು';
+    const profile = await service.extractProfileFromQuery(text);
+
+    expect(profile.state).toBe('Karnataka');
+    expect(profile.age).toBe(35);
+    expect(profile.occupation).toBe('Farmer');
+    expect(profile.category).toBe('Agriculture');
+    expect(profile.isQuestion).toBe(true);
+  });
+
   it('should provide grounded scheme answer with official portal links even in resilient fallback mode', async () => {
     const query = 'solar pump subsidy for farmers in Rajasthan';
     const answer = await service.answerSchemeQuery(query, { state: 'Rajasthan', occupation: 'Farmer' });
@@ -33,7 +44,7 @@ describe('Gemini AI Scheme Advisor Service', () => {
     // Should mention PM-KUSUM or relevant pump schemes and link
     expect(answer.toLowerCase()).toContain('kusum');
     expect(answer).toContain('http');
-  });
+  }, 15000);
 
   it('should provide fluent Hindi responses for queries in Hindi', async () => {
     const query = 'किसान क्रेडिट कार्ड के क्या लाभ हैं?';
@@ -43,5 +54,15 @@ describe('Gemini AI Scheme Advisor Service', () => {
     // Should include Hindi text, benefits, and disclaimer
     expect(/[\u0900-\u097F]/.test(answer)).toBe(true);
     expect(answer).toContain('http');
-  });
+  }, 15000);
+
+  it('should provide fluent Kannada responses for queries in Kannada', async () => {
+    const query = 'ಕರ್ನಾಟಕದ ರೈತರಿಗೆ ಕೃಷಿ ಯೋಜನೆಗಳು ಮತ್ತು ಸಾಲ ಸೌಲಭ್ಯ ತಿಳಿಸಿ';
+    const answer = await service.answerSchemeQuery(query, { language: 'kn', state: 'Karnataka' });
+
+    expect(answer).toBeDefined();
+    // Should include Kannada text (Kannada unicode block: 0C80-0CFF)
+    expect(/[\u0C80-\u0CFF]/.test(answer)).toBe(true);
+    expect(answer).toContain('http');
+  }, 15000);
 });

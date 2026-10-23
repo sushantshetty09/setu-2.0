@@ -100,12 +100,13 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     welcome:
       `Welcome to *Scheme Saathi*! 🇮🇳\n\n` +
       `I can help you discover government schemes that may be relevant to you, understand eligibility requirements, and learn how to apply.\n\n` +
-      `Please choose your preferred language / कृपया अपनी भाषा चुनें:\n` +
+      `Please choose your preferred language / कृपया अपनी भाषा चुनें / ದಯವಿಟ್ಟು ನಿಮ್ಮ ಭಾಷೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ:\n` +
       `1. Hindi (हिंदी)\n` +
-      `2. English`,
+      `2. English\n` +
+      `3. Kannada (ಕನ್ನಡ)`,
 
     selectLanguage:
-      `Please reply with *1* for Hindi or *2* for English.`,
+      `Please reply with *1* for Hindi, *2* for English, or *3* for Kannada (ಕನ್ನಡ).`,
 
     consentPrompt:
       `*Privacy & Consent Notice* 🔒\n\n` +
@@ -248,12 +249,13 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
     welcome:
       `*स्कीम साथी* (Scheme Saathi) में आपका स्वागत है! 🇮🇳\n\n` +
       `मैं आपको आपके लिए उपयुक्त सरकारी योजनाएं खोजने, पात्रता समझने और आवेदन प्रक्रिया जानने में मदद कर सकता हूँ।\n\n` +
-      `कृपया अपनी पसंदीदा भाषा चुनें / Please choose your language:\n` +
+      `कृपया अपनी पसंदीदा भाषा चुनें / Please choose your language / ದಯವಿಟ್ಟು ನಿಮ್ಮ ಭಾಷೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ:\n` +
       `1. हिंदी (Hindi)\n` +
-      `2. English`,
+      `2. English\n` +
+      `3. ಕನ್ನಡ (Kannada)`,
 
     selectLanguage:
-      `कृपया हिंदी के लिए *1* या अंग्रेजी के लिए *2* भेजें।`,
+      `कृपया हिंदी के लिए *1*, अंग्रेजी के लिए *2*, या कन्नड़ के लिए *3* भेजें।`,
 
     consentPrompt:
       `*गोपनीयता और सहमति सूचना* 🔒\n\n` +
@@ -391,13 +393,225 @@ export const TRANSLATIONS: Record<Language, TranslationStrings> = {
       Other: 'अन्य',
     },
   },
+
+  kn: {
+    welcome:
+      `*ಸ್ಕೀಮ್ ಸಾಥಿ* (Scheme Saathi) ಗೆ ಸುಸ್ವಾಗತ! 🇮🇳\n\n` +
+      `ನಿಮಗೆ ಸರಿಹೊಂದುವ ಸರ್ಕಾರಿ ಯೋಜನೆಗಳನ್ನು ಅನ್ವೇಷಿಸಲು, ಅರ್ಹತಾ ನಿಯಮಗಳನ್ನು ಅರ್ಥಮಾಡಿಕೊಳ್ಳಲು ಮತ್ತು ಅರ್ಜಿ ಸಲ್ಲಿಸುವ ಹಂತಗಳನ್ನು ತಿಳಿಯಲು ನಾನು ನಿಮಗೆ ಸಹಾಯ ಮಾಡುತ್ತೇನೆ.\n\n` +
+      `ದಯವಿಟ್ಟು ನಿಮ್ಮ ಭಾಷೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ / Please choose your preferred language / कृपया अपनी भाषा चुनें:\n` +
+      `1. Hindi (हिंदी)\n` +
+      `2. English\n` +
+      `3. Kannada (ಕನ್ನಡ)`,
+
+    selectLanguage:
+      `ದಯವಿಟ್ಟು ಹಿಂದಿಗಾಗಿ *1*, ಇಂಗ್ಲಿಷ್‌ಗಾಗಿ *2*, ಅಥವಾ ಕನ್ನಡಕ್ಕಾಗಿ *3* ಎಂದು ಉತ್ತರಿಸಿ.`,
+
+    consentPrompt:
+      `*ಗೌಪ್ಯತೆ ಮತ್ತು ಸಮ್ಮತಿ ಸೂಚನೆ* 🔒\n\n` +
+      `ನಿಮಗೆ ಸೂಕ್ತವಾದ ಸರ್ಕಾರಿ ಯೋಜನೆಗಳನ್ನು ಹುಡುಕಲು, ನಿಮ್ಮ ರಾಜ್ಯ, ವಯಸ್ಸು ಮತ್ತು ವೃತ್ತಿಯಂತಹ ಕೆಲವು ಮೂಲಭೂತ ವಿವರಗಳು ನಮಗೆ ಬೇಕಾಗುತ್ತವೆ. ನೀವು ಒಪ್ಪಿದರೆ, ನಿಮ್ಮ ಉತ್ತರಗಳನ್ನು ನಮ್ಮ ಯೋಜನೆ ಹೊಂದಾಣಿಕೆ ಸೇವೆಗೆ ಕಳುಹಿಸಲಾಗುತ್ತದೆ.\n\n` +
+      `ನಾವು ಎಂದಿಗೂ ಆಧಾರ್ ಸಂಖ್ಯೆ, ಬ್ಯಾಂಕ್ ವಿವರಗಳು, ಒಟಿಪಿ ಅಥವಾ ದಾಖಲೆಗಳ ಅಪ್‌ಲೋಡ್ ಕೇಳುವುದಿಲ್ಲ.\n\n` +
+      `ನೀವು ಸಮ್ಮತಿಸುತ್ತೀರಾ?\n` +
+      `1. ಹೌದು (Yes)\n` +
+      `2. ಇಲ್ಲ (No)\n\n` +
+      `_(ಸಮ್ಮತಿಯನ್ನು ಹಿಂಪಡೆಯಲು ಮತ್ತು ಸೆಷನ್ ಡೇಟಾವನ್ನು ಅಳಿಸಲು ನೀವು ಯಾವುದೇ ಸಮಯದಲ್ಲಿ *STOP* ಎಂದು ಕಳುಹಿಸಬಹುದು)_`,
+
+    consentDeclined:
+      `ಅರ್ಥವಾಯಿತು. ನೀವು ವೈಯಕ್ತಿಕ ಮಾಹಿತಿಯನ್ನು ಹಂಚಿಕೊಳ್ಳದಿರಲು ನಿರ್ಧರಿಸಿದ್ದೀರಿ. 🛡️\n\n` +
+      `ನೀವು ಇನ್ನೂ ಸಾಮಾನ್ಯ ಪ್ರಶ್ನೆಗಳನ್ನು ಕೇಳಬಹುದು ಅಥವಾ ಆಜ್ಞೆಗಳನ್ನು ಬಳಸಬಹುದು:\n` +
+      `• ಹೊಸದಾಗಿ ಪ್ರಾರಂಭಿಸಲು ಯಾವುದೇ ಸಮಯದಲ್ಲಿ *START* ಎಂದು ಟೈಪ್ ಮಾಡಿ.\n` +
+      `• ಆಜ್ಞೆಗಳ ಪಟ್ಟಿಗಾಗಿ *HELP* ಎಂದು ಟೈಪ್ ಮಾಡಿ.\n` +
+      `• ನೇರ ಮಾಹಿತಿಗಾಗಿ ಅಧಿಕೃತ ರಾಷ್ಟ್ರೀಯ ಪೋರ್ಟಲ್: https://www.myscheme.gov.in ಗೆ ಭೇಟಿ ನೀಡಿ.`,
+
+    consentRevoked:
+      `ನಿಮ್ಮ ಸಮ್ಮತಿಯನ್ನು ಹಿಂಪಡೆಯಲಾಗಿದೆ ಮತ್ತು ಸೆಷನ್ ಡೇಟಾವನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಅಳಿಸಲಾಗಿದೆ. 🛑\n\n` +
+      `ಯಾವುದೇ ವೈಯಕ್ತಿಕ ವಿವರಗಳನ್ನು ಸಂಗ್ರಹಿಸಲಾಗಿಲ್ಲ.\n\n` +
+      `ಹೊಸ ಸೆಷನ್ ಪ್ರಾರಂಭಿಸಲು ಯಾವುದೇ ಸಮಯದಲ್ಲಿ *START* ಅಥವಾ *ನಮಸ್ಕಾರ* ಎಂದು ಟೈಪ್ ಮಾಡಿ.`,
+
+    askState:
+      `*ಪ್ರಶ್ನೆ 1 / 4:* 📍\n` +
+      `ನೀವು ಯಾವ ಭಾರತೀಯ ರಾಜ್ಯ ಅಥವಾ ಕೇಂದ್ರಾಡಳಿತ ಪ್ರದೇಶದಲ್ಲಿ ವಾಸಿಸುತ್ತಿದ್ದೀರಿ?\n\n` +
+      `_(ಉದಾಹರಣೆಗೆ: ಕರ್ನಾಟಕ, ಮಹಾರಾಷ್ಟ್ರ, ತಮಿಳುನಾಡು, ಆಂಧ್ರಪ್ರದೇಶ, ದೆಹಲಿ, ಇತ್ಯಾದಿ)_`,
+
+    invalidState:
+      `⚠️ ಈ ರಾಜ್ಯ ಅಥವಾ ಕೇಂದ್ರಾಡಳಿತ ಪ್ರದೇಶವನ್ನು ಗುರುತಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮಾನ್ಯವಾದ ಭಾರತೀಯ ರಾಜ್ಯದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ (ಉದಾ: ಕರ್ನಾಟಕ, ಮಹಾರಾಷ್ಟ್ರ, ತಮಿಳುನಾಡು, ದೆಹಲಿ, ಇತ್ಯಾದಿ).\n\n` +
+      `_(ಸಲಹೆ: ಹಿಂದಿನ ಪ್ರಶ್ನೆಗೆ ಮರಳಲು *BACK* ಅಥವಾ ಪುನರಾರಂಭಿಸಲು *RESTART* ಎಂದು ಟೈಪ್ ಮಾಡಿ)_`,
+
+    askAge:
+      `*ಪ್ರಶ್ನೆ 2 / 4:* 🎂\n` +
+      `ನಿಮ್ಮ ವಯಸ್ಸು ಎಷ್ಟು ವರ್ಷಗಳು?\n\n` +
+      `_(ದಯವಿಟ್ಟು 1 ರಿಂದ 120 ರ ನಡುವಿನ ಪೂರ್ಣಾಂಕ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ, ಉದಾ: 28)_`,
+
+    invalidAge:
+      `⚠️ ದಯವಿಟ್ಟು 1 ರಿಂದ 120 ರ ನಡುವಿನ ಸರಿಯಾದ ವಯಸ್ಸನ್ನು ಸಂಖ್ಯೆಯಲ್ಲಿ ನಮೂದಿಸಿ (ಉದಾ: 28).\n\n` +
+      `_(ಸಲಹೆ: ಹಿಂದಿನ ಪ್ರಶ್ನೆಗೆ ಮರಳಲು *BACK* ಎಂದು ಉತ್ತರಿಸಿ)_`,
+
+    askOccupation:
+      `*ಪ್ರಶ್ನೆ 3 / 4:* 💼\n` +
+      `ನಿಮ್ಮ ಮುಖ್ಯ ವೃತ್ತಿ ಯಾವುದು?\n\n` +
+      `1. ರೈತ (Farmer)\n` +
+      `2. ವಿದ್ಯಾರ್ಥಿ (Student)\n` +
+      `3. ಕಾರ್ಮಿಕ / ಕೂಲಿ ಕಾರ್ಮಿಕ (Worker)\n` +
+      `4. ವ್ಯಾಪಾರಿ / ಸ್ವಯಂ ಉದ್ಯೋಗಿ (Business Owner)\n` +
+      `5. ಇತರೆ (Other)\n\n` +
+      `_(1 ರಿಂದ 5 ರ ನಡುವಿನ ಆಯ್ಕೆ ಸಂಖ್ಯೆಯನ್ನು ಕಳುಹಿಸಿ)_`,
+
+    invalidOccupation:
+      `⚠️ ದಯವಿಟ್ಟು ನಿಮ್ಮ ವೃತ್ತಿಗೆ ಸರಿಹೊಂದುವಂತೆ 1 ರಿಂದ 5 ರ ನಡುವಿನ ಸಂಖ್ಯೆಯನ್ನು ಆರಿಸಿ ಕಳುಹಿಸಿ:\n` +
+      `1. ರೈತ | 2. ವಿದ್ಯಾರ್ಥಿ | 3. ಕಾರ್ಮಿಕ | 4. ವ್ಯಾಪಾರಿ | 5. ಇತರೆ`,
+
+    askCategory:
+      `*ಪ್ರಶ್ನೆ 4 / 4:* 🎯\n` +
+      `ನೀವು ಯಾವ ವರ್ಗದ ಸರ್ಕಾರಿ ಸೌಲಭ್ಯ / ನೆರವಿನಲ್ಲಿ ಆಸಕ್ತಿ ಹೊಂದಿದ್ದೀರಿ?\n\n` +
+      `1. ಕೃಷಿ (Agriculture)\n` +
+      `2. ಶಿಕ್ಷಣ (Education)\n` +
+      `3. ಉದ್ಯೋಗ ಮತ್ತು ಕೌಶಲ್ಯ (Employment)\n` +
+      `4. ವಸತಿ (Housing)\n` +
+      `5. ಆರೋಗ್ಯ ಮತ್ತು ಚಿಕಿತ್ಸೆ (Healthcare)\n` +
+      `6. ಪಿಂಚಣಿ ಮತ್ತು ಸಾಮಾಜಿಕ ಭದ್ರತೆ (Pension)\n` +
+      `7. ಮಹಿಳಾ ಕಲ್ಯಾಣ (Women's Welfare)\n` +
+      `8. ಇತರೆ / ಸಾಮಾನ್ಯ (Other)\n\n` +
+      `_(1 ರಿಂದ 8 ರ ನಡುವಿನ ಆಯ್ಕೆ ಸಂಖ್ಯೆಯನ್ನು ಕಳುಹಿಸಿ)_`,
+
+    invalidCategory:
+      `⚠️ ದಯವಿಟ್ಟು 1 ರಿಂದ 8 ರ ನಡುವಿನ ಸಂಖ್ಯೆಯನ್ನು ಆರಿಸಿ ಕಳುಹಿಸಿ:\n` +
+      `1. ಕೃಷಿ | 2. ಶಿಕ್ಷಣ | 3. ಉದ್ಯೋಗ | 4. ವಸತಿ | 5. ಆರೋಗ್ಯ | 6. ಪಿಂಚಣಿ | 7. ಮಹಿಳಾ ಕಲ್ಯಾಣ | 8. ಇತರೆ`,
+
+    fetchingSchemes: `🔍 ನಿಮ್ಮ ವಿವರಗಳ ಆಧಾರದ ಮೇಲೆ ಸೂಕ್ತ ಸರ್ಕಾರಿ ಯೋಜನೆಗಳನ್ನು ಹುಡುಕಲಾಗುತ್ತಿದೆ...`,
+
+    noSchemesFound:
+      `🔍 *ನಮ್ಮ ಪ್ರಸ್ತುತ ಪಟ್ಟಿಯಲ್ಲಿ ನೇರ ಹೊಂದಾಣಿಕೆ ಕಂಡುಬಂದಿಲ್ಲ*\n\n` +
+      `ನಾವು ನಿಮ್ಮ ವಿವರಗಳ ಪ್ರಕಾರ ಹುಡುಕಿದೆವು, ಆದರೆ ಪ್ರಸ್ತುತ ಯಾವುದೇ ನೇರ ಯೋಜನೆ ಸಿಗಲಿಲ್ಲ.\n\n` +
+      `*ಪ್ರಮುಖ ಸೂಚನೆ:* ಇದರರ್ಥ ನೀವು ಸರ್ಕಾರಿ ಸೌಲಭ್ಯಗಳಿಗೆ ಅರ್ಹರಲ್ಲ ಎಂದರ್ಥವಲ್ಲ! ನಮ್ಮ ಯೋಜನಾ ಪಟ್ಟಿಯನ್ನು ನಿರಂತರವಾಗಿ ನವೀಕರಿಸಲಾಗುತ್ತಿದೆ.\n\n` +
+      `👉 ನೀವು:\n` +
+      `• ಅಧಿಕೃತ ರಾಷ್ಟ್ರೀಯ ಪೋರ್ಟಲ್ ಭೇಟಿ ನೀಡಿ: https://www.myscheme.gov.in\n` +
+      `• ಹೊಸ ಮಾನದಂಡಗಳೊಂದಿಗೆ ಹುಡುಕಲು *RESTART* ಎಂದು ಟೈಪ್ ಮಾಡಿ.\n` +
+      `• ಕೊನೆಯ ಉತ್ತರ ಬದಲಾಯಿಸಲು *BACK* ಎಂದು ಉತ್ತರಿಸಿ.`,
+
+    resultsHeader: (count: number) =>
+      `🎉 *ನಿಮಗಾಗಿ ${count} ಸೂಕ್ತ ಸರ್ಕಾರಿ ${count === 1 ? 'ಯೋಜನೆ' : 'ಯೋಜನೆಗಳು'} ಕಂಡುಬಂದಿವೆ!*\n\n` +
+      `ಪರಿಶೀಲಿಸಿದ ಅಧಿಕೃತ ವಿವರಗಳು ಕೆಳಗಿವೆ:`,
+
+    schemeItem: {
+      purpose: '📝 *ಉದ್ದೇಶ:*',
+      benefits: '💰 *ಪ್ರಮುಖ ಸೌಲಭ್ಯಗಳು/ಲಾಭಗಳು:*',
+      eligibility: '👥 *ಅರ್ಹತಾ ಸಾರಾಂಶ:*',
+      documents: '📄 *ಅಗತ್ಯ ದಾಖಲೆಗಳು:*',
+      application: '🚀 *ಅರ್ಜಿ ಸಲ್ಲಿಸುವ ವಿಧಾನ:*',
+      officialLink: '🔗 *ಅಧಿಕೃತ ಪೋರ್ಟಲ್:*',
+      lastVerified: '🗓️ *ಪರಿಶೀಲಿಸಲಾಗಿದೆ:*',
+    },
+
+    disclaimer:
+      `⚠️ *ಸೂಚನೆ:* ಈ ಫಲಿತಾಂಶಗಳು ಲಭ್ಯವಿರುವ ಮಾಹಿತಿಯ ಆಧಾರದ ಮೇಲಿನ ಮಾರ್ಗದರ್ಶನ ಸಲಹೆಗಳಾಗಿವೆ. ಸ್ಕೀಮ್ ಸಾಥಿ ಅಧಿಕೃತ ಸರ್ಕಾರಿ ಅರ್ಹತೆಯನ್ನು ನಿರ್ಧರಿಸುವುದಿಲ್ಲ. ಅರ್ಜಿ ಸಲ್ಲಿಸುವ ಮೊದಲು ದಯವಿಟ್ಟು ಅಧಿಕೃತ ಸರ್ಕಾರಿ ಪೋರ್ಟಲ್‌ನಲ್ಲಿ ನಿಯಮಗಳನ್ನು ಪರಿಶೀಲಿಸಿ.\n\n` +
+      `ಆಜ್ಞೆಗಳು: ಮತ್ತೆ ಹುಡುಕಲು *RESTART* ಎಂದು ಟೈಪ್ ಮಾಡಿ | ಆಜ್ಞೆಗಳ ಪಟ್ಟಿಗಾಗಿ *HELP* ಎಂದು ಟೈಪ್ ಮಾಡಿ.`,
+
+    helpMessage:
+      `ℹ️ *ಸ್ಕೀಮ್ ಸಾಥಿ ಆಜ್ಞೆಗಳ ಮಾರ್ಗದರ್ಶಿ:*\n\n` +
+      `• *BACK* - ಹಿಂದಿನ ಪ್ರಶ್ನೆಗೆ ಹಿಂತಿರುಗಿ\n` +
+      `• *RESTART* - ಪ್ರಾರಂಭದಿಂದ ಮತ್ತೆ ಸಂಭಾಷಣೆ ಆರಂಭಿಸಿ\n` +
+      `• *STOP* - ಸಮ್ಮತಿಯನ್ನು ಹಿಂಪಡೆಯಿರಿ ಮತ್ತು ಸೆಷನ್ ಡೇಟಾ ಅಳಿಸಿ\n` +
+      `• *HELP* - ಈ ಸಹಾಯ ಸಂದೇಶವನ್ನು ತೋರಿಸಿ`,
+
+    backAcknowledgment: (stepName: string) =>
+      `↩️ ಹಿಂದಿನ ಹಂತ *${stepName}* ಗೆ ಹಿಂತಿರುಗುತ್ತಿದ್ದೇವೆ.`,
+
+    cannotGoBack: `ℹ️ ನೀವು ಮೊದಲ ಹಂತದಲ್ಲಿದ್ದೀರಿ. ಹಿಂತಿರುಗಲು ಹಿಂದಿನ ಪ್ರಶ್ನೆಗಳಿಲ್ಲ. ಆರಂಭದಿಂದ ಪ್ರಾರಂಭಿಸಲು *RESTART* ಎಂದು ಟೈಪ್ ಮಾಡಿ.`,
+
+    restartPrompt: `🔄 ಹೊಸ ಸಂಭಾಷಣೆಯನ್ನು ಪ್ರಾರಂಭಿಸಲಾಗುತ್ತಿದೆ...`,
+
+    serviceError:
+      `⚠️ ನಮ್ಮ ಯೋಜನಾ ಸೇವೆಯಲ್ಲಿ ತಾತ್ಕಾಲಿಕ ಅಡಚಣೆ ಉಂಟಾಗಿದೆ. ದಯವಿಟ್ಟು ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.\n\n` +
+      `ಮತ್ತೆ ಪ್ರಾರಂಭಿಸಲು *RESTART* ಎಂದು ಟೈಪ್ ಮಾಡಿ.`,
+
+    occupationOptions: {
+      Farmer: 'ರೈತ',
+      Student: 'ವಿದ್ಯಾರ್ಥಿ',
+      Worker: 'ಕಾರ್ಮಿಕ / ಕೂಲಿ ಕಾರ್ಮಿಕ',
+      'Business Owner': 'ವ್ಯಾಪಾರಿ / ಸ್ವಯಂ ಉದ್ಯೋಗಿ',
+      Other: 'ಇತರೆ',
+    },
+
+    categoryOptions: {
+      Agriculture: 'ಕೃಷಿ',
+      Education: 'ಶಿಕ್ಷಣ',
+      Employment: 'ಉದ್ಯೋಗ',
+      Housing: 'ವಸತಿ',
+      Healthcare: 'ಆರೋಗ್ಯ',
+      Pension: 'ಪಿಂಚಣಿ',
+      "Women's Welfare": 'ಮಹಿಳಾ ಕಲ್ಯಾಣ',
+      Other: 'ಇತರೆ',
+    },
+  },
 };
 
 /**
  * Normalizes input string for state matching
  */
 export function matchIndianState(input: string): string | null {
-  const cleaned = input.trim().toLowerCase().replace(/[^a-z\s]/g, '');
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  // 1. Check direct regional script aliases (Kannada & Devanagari)
+  const regionalAliases: Record<string, string> = {
+    // Kannada
+    'ಕರ್ನಾಟಕ': 'Karnataka',
+    'ಕರ್ನಾಟಕದ': 'Karnataka',
+    'ಕೇರಳ': 'Kerala',
+    'ತಮಿಳುನಾಡು': 'Tamil Nadu',
+    'ಆಂಧ್ರ ಪ್ರದೇಶ': 'Andhra Pradesh',
+    'ಆಂಧ್ರಪ್ರದೇಶ': 'Andhra Pradesh',
+    'ತೆಲಂಗಾಣ': 'Telangana',
+    'ಮಹಾರಾಷ್ಟ್ರ': 'Maharashtra',
+    'ಗೋವಾ': 'Goa',
+    'ದೆಹಲಿ': 'Delhi',
+    'ಉತ್ತರ ಪ್ರದೇಶ': 'Uttar Pradesh',
+    'ಉತ್ತರಪ್ರದೇಶ': 'Uttar Pradesh',
+    'ಮಧ್ಯ ಪ್ರದೇಶ': 'Madhya Pradesh',
+    'ಮಧ್ಯಪ್ರದೇಶ': 'Madhya Pradesh',
+    'ರಾಜಸ್ಥಾನ': 'Rajasthan',
+    'ಗುಜರಾತ್': 'Gujarat',
+    'ಪಂಜಾಬ್': 'Punjab',
+    'ಹರಿಯಾಣ': 'Haryana',
+    'ಬಿಹಾರ': 'Bihar',
+    'ಪಶ್ಚಿಮ ಬಂಗಾಳ': 'West Bengal',
+    'ಒಡಿಶಾ': 'Odisha',
+    'ಅಸ್ಸಾಂ': 'Assam',
+    // Hindi / Devanagari
+    'कर्नाटक': 'Karnataka',
+    'उत्तर प्रदेश': 'Uttar Pradesh',
+    'उत्तरप्रदेश': 'Uttar Pradesh',
+    'मध्य प्रदेश': 'Madhya Pradesh',
+    'मध्यप्रदेश': 'Madhya Pradesh',
+    'महाराष्ट्र': 'Maharashtra',
+    'बिहार': 'Bihar',
+    'राजस्थान': 'Rajasthan',
+    'दिल्ली': 'Delhi',
+    'गुजरात': 'Gujarat',
+    'पंजाब': 'Punjab',
+    'हरियाणा': 'Haryana',
+    'पश्चिम बंगाल': 'West Bengal',
+    'केरल': 'Kerala',
+    'तमिलनाडु': 'Tamil Nadu',
+    'आंध्र प्रदेश': 'Andhra Pradesh',
+    'तेलंगाना': 'Telangana',
+    'ओडिशा': 'Odisha',
+    'झारखंड': 'Jharkhand',
+    'छत्तीसगढ़': 'Chhattisgarh',
+    'उत्तराखंड': 'Uttarakhand',
+    'हिमाचल प्रदेश': 'Himachal Pradesh',
+    'असम': 'Assam',
+    'गोवा': 'Goa',
+  };
+
+  const lowerRaw = trimmed.toLowerCase();
+  for (const [key, val] of Object.entries(regionalAliases)) {
+    if (lowerRaw.includes(key.toLowerCase())) {
+      return val;
+    }
+  }
+
+  // 2. English / transliterated matching
+  const cleaned = lowerRaw.replace(/[^a-z\s]/g, '');
   if (!cleaned) return null;
 
   // Exact or contains match in list

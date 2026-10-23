@@ -40,7 +40,7 @@ export interface UserProfile {
   age: number;
   occupation: OccupationType;
   category: SchemeCategory;
-  language: 'en' | 'hi';
+  language: 'en' | 'hi' | 'kn';
 }
 
 export interface ISchemeService {

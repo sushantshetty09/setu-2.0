@@ -299,4 +299,95 @@ describe('Scheme Saathi Conversation Flow', () => {
       expect(duplicateReplies).toHaveLength(0); // Safely ignored
     });
   });
+
+  describe('Kannada (ಕನ್ನಡ) Language Flow & Commands', () => {
+    it('should welcome user and allow choosing Kannada via option 3', async () => {
+      const welcomeReplies = await flow.handleMessage(user, 'ನಮಸ್ಕಾರ');
+      expect(welcomeReplies[0]).toContain('Scheme Saathi');
+      expect(welcomeReplies[0]).toContain('3. Kannada (ಕನ್ನಡ)');
+
+      const replies = await flow.handleMessage(user, '3');
+      expect(replies).toHaveLength(1);
+      expect(replies[0]).toContain('ಗೌಪ್ಯತೆ ಮತ್ತು ಸಮ್ಮತಿ ಸೂಚನೆ');
+      expect(replies[0]).toContain('ನೀವು ಸಮ್ಮತಿಸುತ್ತೀರಾ?');
+
+      const state = await store.get(user);
+      expect(state?.language).toBe('kn');
+      expect(state?.step).toBe('CONSENT');
+    });
+
+    it('should complete the entire 4-question Kannada wizard for a Karnataka farmer', async () => {
+      // 1. Start with Kannada greeting
+      await flow.handleMessage(user, 'ನಮಸ್ತೆ');
+      // 2. Select Kannada
+      await flow.handleMessage(user, 'ಕನ್ನಡ');
+      // 3. Consent with Kannada "ಹೌದು"
+      const consentReplies = await flow.handleMessage(user, 'ಹೌದು');
+      expect(consentReplies[0]).toContain('ಪ್ರಶ್ನೆ 1 / 4');
+      expect(consentReplies[0]).toContain('ನೀವು ಯಾವ ಭಾರತೀಯ ರಾಜ್ಯ');
+
+      // 4. Enter state: ಕರ್ನಾಟಕ
+      const stateReplies = await flow.handleMessage(user, 'ಕರ್ನಾಟಕ');
+      expect(stateReplies[0]).toContain('ಪ್ರಶ್ನೆ 2 / 4');
+      expect(stateReplies[0]).toContain('ನಿಮ್ಮ ವಯಸ್ಸು ಎಷ್ಟು ವರ್ಷಗಳು');
+
+      // 5. Enter age: 40
+      const ageReplies = await flow.handleMessage(user, '40');
+      expect(ageReplies[0]).toContain('ಪ್ರಶ್ನೆ 3 / 4');
+      expect(ageReplies[0]).toContain('ನಿಮ್ಮ ಮುಖ್ಯ ವೃತ್ತಿ ಯಾವುದು');
+      expect(ageReplies[0]).toContain('1. ರೈತ');
+
+      // 6. Enter occupation: 1 (Farmer / ರೈತ)
+      const occReplies = await flow.handleMessage(user, '1');
+      expect(occReplies[0]).toContain('ಪ್ರಶ್ನೆ 4 / 4');
+      expect(occReplies[0]).toContain('ನೀವು ಯಾವ ವರ್ಗದ ಸರ್ಕಾರಿ ಸೌಲಭ್ಯ');
+      expect(occReplies[0]).toContain('1. ಕೃಷಿ');
+
+      // 7. Enter category: 1 (Agriculture / ಕೃಷಿ)
+      const resultsReplies = await flow.handleMessage(user, '1');
+      expect(resultsReplies.length).toBeGreaterThanOrEqual(2);
+      expect(resultsReplies[0]).toContain('ಸೂಕ್ತ ಸರ್ಕಾರಿ');
+      // Scheme cards should use Kannada labels
+      const card = resultsReplies[1];
+      expect(card).toContain('ಉದ್ದೇಶ:');
+      expect(card).toContain('ಪ್ರಮುಖ ಸೌಲಭ್ಯಗಳು/ಲಾಭಗಳು:');
+      expect(card).toContain('ಅರ್ಹತಾ ಸಾರಾಂಶ:');
+      expect(card).toContain('ಅಗತ್ಯ ದಾಖಲೆಗಳು:');
+      expect(card).toContain('ಅರ್ಜಿ ಸಲ್ಲಿಸುವ ವಿಧಾನ:');
+      expect(card).toContain('ಅಧಿಕೃತ ಪೋರ್ಟಲ್:');
+
+      const state = await store.get(user);
+      expect(state?.step).toBe('RESULTS');
+      expect(state?.answers.state).toBe('Karnataka');
+      expect(state?.answers.age).toBe(40);
+      expect(state?.answers.occupation).toBe('Farmer');
+      expect(state?.answers.category).toBe('Agriculture');
+    });
+
+    it('should support Kannada commands: ಸಹಾಯ (HELP), ಹಿಂದೆ (BACK), ಮರುಪ್ರಾರಂಭ (RESTART), ನಿಲ್ಲಿಸಿ (STOP)', async () => {
+      await flow.handleMessage(user, 'HI');
+      await flow.handleMessage(user, '3'); // Kannada
+      await flow.handleMessage(user, '1'); // Consent Yes
+      await flow.handleMessage(user, 'ಕರ್ನಾಟಕ'); // State
+
+      // Test HELP in Kannada
+      const helpReplies = await flow.handleMessage(user, 'ಸಹಾಯ');
+      expect(helpReplies[0]).toContain('ಸ್ಕೀಮ್ ಸಾಥಿ ಆಜ್ಞೆಗಳ ಮಾರ್ಗದರ್ಶಿ');
+      expect(helpReplies[0]).toContain('BACK');
+      expect(helpReplies[0]).toContain('RESTART');
+
+      // Test BACK in Kannada
+      const backReplies = await flow.handleMessage(user, 'ಹಿಂದೆ');
+      expect(backReplies[0]).toContain('ಹಿಂದಿನ ಹಂತ');
+      const stateAfterBack = await store.get(user);
+      expect(stateAfterBack?.step).toBe('ASK_STATE');
+
+      // Test STOP in Kannada
+      const stopReplies = await flow.handleMessage(user, 'ನಿಲ್ಲಿಸಿ');
+      expect(stopReplies[0]).toContain('ನಿಮ್ಮ ಸಮ್ಮತಿಯನ್ನು ಹಿಂಪಡೆಯಲಾಗಿದೆ');
+      const stateAfterStop = await store.get(user);
+      expect(stateAfterStop?.step).toBe('STOPPED');
+      expect(stateAfterStop?.consent).toBe(false);
+    });
+  });
 });

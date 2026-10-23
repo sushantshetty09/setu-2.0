@@ -11,7 +11,7 @@ export interface ChatMessage {
 }
 
 export interface ConversationContext {
-  language?: 'en' | 'hi';
+  language?: 'en' | 'hi' | 'kn';
   state?: string;
   occupation?: string;
   age?: number;
@@ -110,7 +110,7 @@ export class GeminiService {
       }
     }
 
-    return `You are "Scheme Saathi" (स्कीम साथी) 🇮🇳, an empathetic, highly knowledgeable AI government welfare advisor for Indian citizens, especially farmers, rural families, workers, women, youth, and elderly citizens.
+    return `You are "Scheme Saathi" (ಸ್ಕೀಮ್ ಸಾಥಿ / स्कीम साथी) 🇮🇳, an empathetic, highly knowledgeable AI government welfare advisor for Indian citizens, especially farmers, rural families, workers, women, youth, and elderly citizens.
 
 YOUR MISSION:
 Help citizens discover legitimate government schemes, understand eligibility criteria in depth, check required documents, and guide them step-by-step through application procedures.
@@ -127,7 +127,9 @@ CRITICAL INSTRUCTIONS FOR DETAILED/DEEP INFORMATION:
   6. 🔗 *Official Portal Link & Helpline Phone Numbers*
 
 LANGUAGE AND TONE:
-- Always respond in the SAME language and tone used by the citizen.
+- Always respond in the SAME language and script used by the citizen.
+  * If the citizen writes in Kannada (ಕನ್ನಡ), reply in natural, fluent, respectful Kannada using Kannada script (ಕನ್ನಡ ಲಿಪಿ). Translate or explain technical terms clearly.
+  * If they write in Kannada using English script (Kanglish, e.g. "raitarige yavudella schemes ide"), reply in friendly Kannada or Kanglish.
   * If the citizen writes in Hindi (हिंदी), reply in clear, respectful Hindi (Devanagari script).
   * If they write in Hinglish (e.g. "is scheme ke baare me aur detail do"), reply in friendly, conversational Hinglish.
   * If they write in English, reply in English.
@@ -219,6 +221,7 @@ ${catalogueSummary}`;
       'apply', 'detail', 'details', 'information', 'more', 'aur', 'jaankari',
       'process', 'steps', 'portal', 'website', 'second', 'first', 'third',
       'this', 'that', 'kcc', 'kisan', 'kusum', 'pmay', 'ayushman',
+      'ಯಾವ', 'ಹೇಗೆ', 'ಯೋಜನೆ', 'ತಿಳಿಸಿ', 'ಅರ್ಜಿ', 'ದಾಖಲೆ', 'ಅರ್ಹತೆ', 'ಸಹಾಯಧನ', 'ಸಾಲ', 'ಮಾಹಿತಿ', 'ವಿವರ',
     ];
     result.isQuestion = inquiryWords.some((w) => lower.includes(w)) || text.includes('?') || text.length > 20;
 
@@ -230,35 +233,116 @@ ${catalogueSummary}`;
 
     // 2. Detect Age
     const ageMatch = text.match(/\b(1[8-9]|[2-8][0-9]|90)\b/);
-    if (ageMatch && (lower.includes('age') || lower.includes('saal') || lower.includes('year') || lower.includes('umar'))) {
+    if (ageMatch && (lower.includes('age') || lower.includes('saal') || lower.includes('year') || lower.includes('umar') || lower.includes('ವರ್ಷ') || lower.includes('ವಯಸ್ಸು'))) {
       result.age = parseInt(ageMatch[0], 10);
     }
 
     // 3. Detect Occupation
-    if (lower.includes('kisan') || lower.includes('farmer') || lower.includes('kheti') || lower.includes('krishi')) {
+    if (
+      lower.includes('kisan') ||
+      lower.includes('farmer') ||
+      lower.includes('kheti') ||
+      lower.includes('krishi') ||
+      lower.includes('ರೈತ') ||
+      lower.includes('ಕೃಷಿಕ')
+    ) {
       result.occupation = 'Farmer';
-    } else if (lower.includes('student') || lower.includes('vidyarthi') || lower.includes('chhatra') || lower.includes('padhai')) {
+    } else if (
+      lower.includes('student') ||
+      lower.includes('vidyarthi') ||
+      lower.includes('chhatra') ||
+      lower.includes('padhai') ||
+      lower.includes('ವಿದ್ಯಾರ್ಥಿ')
+    ) {
       result.occupation = 'Student';
-    } else if (lower.includes('mazdoor') || lower.includes('worker') || lower.includes('shramik') || lower.includes('labour')) {
+    } else if (
+      lower.includes('mazdoor') ||
+      lower.includes('worker') ||
+      lower.includes('shramik') ||
+      lower.includes('labour') ||
+      lower.includes('ಕಾರ್ಮಿಕ') ||
+      lower.includes('ಕೂಲಿ')
+    ) {
       result.occupation = 'Worker';
-    } else if (lower.includes('vyapari') || lower.includes('business') || lower.includes('dukan') || lower.includes('entrepreneur')) {
+    } else if (
+      lower.includes('vyapari') ||
+      lower.includes('business') ||
+      lower.includes('dukan') ||
+      lower.includes('entrepreneur') ||
+      lower.includes('ವ್ಯಾಪಾರ') ||
+      lower.includes('ಸ್ವಯಂ')
+    ) {
       result.occupation = 'Business Owner';
     }
 
     // 4. Detect Category
-    if (lower.includes('kisan') || lower.includes('fasal') || lower.includes('crop') || lower.includes('tractor') || lower.includes('pump') || lower.includes('agri')) {
+    if (
+      lower.includes('kisan') ||
+      lower.includes('fasal') ||
+      lower.includes('crop') ||
+      lower.includes('tractor') ||
+      lower.includes('pump') ||
+      lower.includes('agri') ||
+      lower.includes('ಕೃಷಿ') ||
+      lower.includes('ಬೆಳೆ') ||
+      lower.includes('ರೈತ')
+    ) {
       result.category = 'Agriculture';
-    } else if (lower.includes('scholarship') || lower.includes('padhai') || lower.includes('school') || lower.includes('college') || lower.includes('education')) {
+    } else if (
+      lower.includes('scholarship') ||
+      lower.includes('padhai') ||
+      lower.includes('school') ||
+      lower.includes('college') ||
+      lower.includes('education') ||
+      lower.includes('ಶಿಕ್ಷಣ') ||
+      lower.includes('ಶಾಲೆ') ||
+      lower.includes('ವಿದ್ಯಾರ್ಥಿ')
+    ) {
       result.category = 'Education';
-    } else if (lower.includes('job') || lower.includes('naukri') || lower.includes('rozgar') || lower.includes('skill') || lower.includes('training')) {
+    } else if (
+      lower.includes('job') ||
+      lower.includes('naukri') ||
+      lower.includes('rozgar') ||
+      lower.includes('skill') ||
+      lower.includes('training') ||
+      lower.includes('ಉದ್ಯೋಗ') ||
+      lower.includes('ಕೆಲಸ')
+    ) {
       result.category = 'Employment';
-    } else if (lower.includes('ghar') || lower.includes('makan') || lower.includes('awas') || lower.includes('housing')) {
+    } else if (
+      lower.includes('ghar') ||
+      lower.includes('makan') ||
+      lower.includes('awas') ||
+      lower.includes('housing') ||
+      lower.includes('ವಸತಿ') ||
+      lower.includes('ಮನೆ')
+    ) {
       result.category = 'Housing';
-    } else if (lower.includes('health') || lower.includes('ilaj') || lower.includes('hospital') || lower.includes('dawa') || lower.includes('ayushman')) {
+    } else if (
+      lower.includes('health') ||
+      lower.includes('ilaj') ||
+      lower.includes('hospital') ||
+      lower.includes('dawa') ||
+      lower.includes('ayushman') ||
+      lower.includes('ಆರೋಗ್ಯ') ||
+      lower.includes('ಚಿಕಿತ್ಸೆ')
+    ) {
       result.category = 'Healthcare';
-    } else if (lower.includes('pension') || lower.includes('vriddha') || lower.includes('retirement')) {
+    } else if (
+      lower.includes('pension') ||
+      lower.includes('vriddha') ||
+      lower.includes('retirement') ||
+      lower.includes('ಪಿಂಚಣಿ')
+    ) {
       result.category = 'Pension';
-    } else if (lower.includes('mahila') || lower.includes('women') || lower.includes('beti') || lower.includes('matru')) {
+    } else if (
+      lower.includes('mahila') ||
+      lower.includes('women') ||
+      lower.includes('beti') ||
+      lower.includes('matru') ||
+      lower.includes('ಮಹಿಳಾ') ||
+      lower.includes('ಮಹಿಳೆ')
+    ) {
       result.category = "Women's Welfare";
     }
 
@@ -270,7 +354,42 @@ ${catalogueSummary}`;
    */
   private localSearchFallback(userQuery: string, context?: ConversationContext): string {
     let q = userQuery.toLowerCase();
-    const isHindi = context?.language === 'hi' || /[\u0900-\u097F]/.test(userQuery);
+    const isKannada = context?.language === 'kn' || /[\u0C80-\u0CFF]/.test(userQuery);
+    const isHindi = !isKannada && (context?.language === 'hi' || /[\u0900-\u097F]/.test(userQuery));
+
+    // Common Kannada word mappings to boost keyword matching
+    const kannadaSynonyms: Record<string, string> = {
+      ರೈತ: 'kisan farmer agriculture',
+      ಕೃಷಿ: 'agriculture kisan farming',
+      ಬೆಳೆ: 'crop harvest fasal pmfby',
+      ವಿಮೆ: 'bima insurance pmfby',
+      ಸಾಲ: 'loan credit kcc mudra',
+      ಪಂಪ್: 'pump solar kusum irrigation',
+      ಸೋಲಾರ್: 'solar kusum',
+      ಟ್ರಾಕ್ಟರ್: 'tractor machinery smam',
+      ಯೋಜನೆ: 'yojana scheme',
+      ವಸತಿ: 'housing awas pmay',
+      ಮನೆ: 'house housing awas pmay',
+      ಪಿಂಚಣಿ: 'pension kmy nps',
+      ಆರೋಗ್ಯ: 'health arogya ayushman hospital',
+      ಔಷಧ: 'medicine janaushadhi',
+      ವಿದ್ಯಾರ್ಥಿ: 'student scholarship nsp',
+      ಶಿಕ್ಷಣ: 'education student school scholarship',
+      ಉದ್ಯೋಗ: 'employment job mgnrega rozgar',
+      ಮಹಿಳಾ: 'women matru mahila',
+      ಕಾರ್ಮಿಕ: 'worker labour shramik',
+      ಹೈನುಗಾರಿಕೆ: 'dairy gokul animal livestock',
+      ಮೀನುಗಾರಿಕೆ: 'fisheries matsya fish',
+      ಸಹಾಯಧನ: 'subsidy grant financial',
+    };
+
+    if (isKannada) {
+      for (const [kanWord, engWords] of Object.entries(kannadaSynonyms)) {
+        if (userQuery.includes(kanWord)) {
+          q += ' ' + engWords;
+        }
+      }
+    }
 
     // Common Hindi Devanagari word mappings to boost keyword matching
     const hindiSynonyms: Record<string, string> = {
@@ -315,7 +434,11 @@ ${catalogueSummary}`;
       q.includes('aur') ||
       q.includes('document') ||
       q.includes('apply') ||
-      q.includes('eligib');
+      q.includes('eligib') ||
+      q.includes('ಮಾಹಿತಿ') ||
+      q.includes('ವಿವರ') ||
+      q.includes('ದಾಖಲೆ') ||
+      q.includes('ಅರ್ಜಿ');
 
     // Score schemes by keyword relevance
     const matchedSchemes = SCHEMES_DATABASE.map((scheme) => {
@@ -345,6 +468,16 @@ ${catalogueSummary}`;
       .map((item) => item.scheme);
 
     if (matchedSchemes.length === 0) {
+      if (isKannada) {
+        return (
+          `ನಮಸ್ಕಾರ! 🇮🇳\n\n` +
+          `ನಿಮ್ಮ ಪ್ರಶ್ನೆ "${userQuery}" ಗೆ ಸಂಬಂಧಿಸಿದಂತೆ ನಮ್ಮ ಡೇಟಾಬೇಸ್‌ನಲ್ಲಿ ನೇರ ಹೊಂದಾಣಿಕೆ ಕಂಡುಬಂದಿಲ್ಲ.\n\n` +
+          `💡 *ಸಲಹೆ:*\n` +
+          `• ಯಾವುದೇ ನಿರ್ದಿಷ್ಟ ಯೋಜನೆಯ ಬಗ್ಗೆ ಕೇಳಿ (ಉದಾ: "PM-KISAN ಗೆ ಅಗತ್ಯವಿರುವ ದಾಖಲೆಗಳು ಯಾವುವು?").\n` +
+          `• ಹಂತ-ಹಂತದ ಅರ್ಹತಾ ಪರಿಶೀಲನೆಗಾಗಿ *START* ಎಂದು ಟೈಪ್ ಮಾಡಿ.\n` +
+          `• ರಾಷ್ಟ್ರೀಯ ಪೋರ್ಟಲ್: https://www.myscheme.gov.in ಗೆ ಭೇಟಿ ನೀಡಿ.`
+        );
+      }
       if (isHindi) {
         return (
           `नमस्ते! 🇮🇳\n\n` +
@@ -368,6 +501,19 @@ ${catalogueSummary}`;
     // If citizen requested a deep-dive on a single scheme
     if (isDetailRequest && matchedSchemes.length >= 1) {
       const s = matchedSchemes[0];
+      if (isKannada) {
+        return (
+          `🏛️ *${s.name} — ಸಮಗ್ರ ವಿವರ ಹಾಗೂ ಅರ್ಜಿ ಮಾರ್ಗದರ್ಶಿ*\n` +
+          `📍 _ವ್ಯಾಪ್ತಿ/ರಾಜ್ಯ: ${s.state}_\n\n` +
+          `📝 *ಉದ್ದೇಶ:* ${s.description}\n\n` +
+          `💰 *ಸೌಲಭ್ಯಗಳು/ಲಾಭಗಳು:* ${s.benefits}\n\n` +
+          `👥 *ಅರ್ಹತಾ ವಿವರ:* ${s.eligibilitySummary}\n\n` +
+          `📄 *ಅಗತ್ಯವಿರುವ ದಾಖಲೆಗಳ ಪಟ್ಟಿ:*\n• ${s.requiredDocuments.join('\n• ')}\n\n` +
+          `🚀 *ಅರ್ಜಿ ಸಲ್ಲಿಸುವ ಹಂತಗಳು:*\n1. ${s.applicationSteps.join('\n2. ')}\n\n` +
+          `🔗 *ಅಧಿಕೃತ ವೆಬ್‌ಸೈಟ್:* ${s.officialUrl}\n\n` +
+          `⚠️ *ಮುಖ್ಯ ಸೂಚನೆ:* ಅರ್ಜಿ ಸಲ್ಲಿಸುವ ಮೊದಲು ಅಧಿಕೃತ ಪೋರ್ಟಲ್‌ನಲ್ಲಿ ನಿಯಮಗಳನ್ನು ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಿ.`
+        );
+      }
       if (isHindi) {
         return (
           `🏛️ *${s.name} — विस्तृत विवरण एवं आवेदन मार्गदर्शिका*\n` +
@@ -395,6 +541,21 @@ ${catalogueSummary}`;
     }
 
     // Format matched schemes list
+    if (isKannada) {
+      let response = `ನಿಮ್ಮ ಪ್ರಶ್ನೆಗೆ ಸೂಕ್ತವಾದ ಪ್ರಮುಖ ಸರ್ಕಾರಿ ಯೋಜನೆಗಳು ಇಲ್ಲಿವೆ:\n\n`;
+      for (let i = 0; i < matchedSchemes.length; i++) {
+        const s = matchedSchemes[i];
+        response += `🏛️ *${i + 1}. ${s.name}*\n` +
+          `📍 _ವ್ಯಾಪ್ತಿ: ${s.state}_\n` +
+          `💰 *ಲಾಭಗಳು:* ${s.benefits}\n` +
+          `👥 *ಅರ್ಹತೆ:* ${s.eligibilitySummary}\n` +
+          `📄 *ದಾಖಲೆಗಳು:* ${s.requiredDocuments.slice(0, 3).join(', ')}\n` +
+          `🔗 *ಪೋರ್ಟಲ್:* ${s.officialUrl}\n\n`;
+      }
+      response += `⚠️ *ಸೂಚನೆ:* ಈ ಫಲಿತಾಂಶಗಳು ಮಾರ್ಗದರ್ಶನಕ್ಕಾಗಿವೆ. ಯಾವುದೇ ಯೋಜನೆಯ ಪೂರ್ಣ ವಿವರಗಳಿಗಾಗಿ ಅದರ ಹೆಸರು ಕೇಳಿ (ಉದಾ: "PM-KISAN ಬಗ್ಗೆ ತಿಳಿಸಿ").`;
+      return response;
+    }
+
     if (isHindi) {
       let response = `यहाँ आपके प्रश्न से संबंधित प्रमुख सरकारी योजनाएं हैं:\n\n`;
       for (let i = 0; i < matchedSchemes.length; i++) {
