@@ -1,0 +1,39 @@
+# Netlify configuration for SETU (सेतु)
+# Documentation: https://docs.netlify.com/configure-builds/file-based-configuration/
+
+[build]
+  base = "frontend"
+  publish = "dist"
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Optional: If you deploy the backend (FastAPI) to Render/Railway/Fly.io,
+# you can proxy /api/* directly to your deployed backend URL.
+# Uncomment and replace YOUR_BACKEND_URL with your production backend URL:
+# [[redirects]]
+#   from = "/api/*"
+#   to = "https://YOUR_BACKEND_URL/api/:splat"
+#   status = 200
+#   force = true
+
+# SPA Fallback for client-side React Router navigation
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Security and Performance Headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
