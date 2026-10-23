@@ -164,21 +164,25 @@ export class ConversationFlow {
         return this.handleCategoryAnswer(senderId, state, trimmed);
 
       case 'RESULTS':
-        // If user asks a question after viewing results, answer it with Gemini AI
+        // If user asks a question or asks for more info after viewing results, answer it with Gemini AI
         const followUpProfile = await this.geminiService.extractProfileFromQuery(trimmed);
-        if (followUpProfile.isQuestion || trimmed.length > 8) {
+        if (followUpProfile.isQuestion || trimmed.length >= 4) {
           const aiAnswer = await this.geminiService.answerSchemeQuery(trimmed, {
             language: state.language,
             state: state.answers.state,
             occupation: state.answers.occupation,
             age: state.answers.age,
+            lastShownSchemes: state.lastShownSchemes,
+            history: state.chatHistory,
           });
+          this.appendChatHistory(state, trimmed, aiAnswer);
+          await this.store.set(senderId, state);
           return [aiAnswer];
         }
         return [
           lang === 'hi'
-            ? `आप पहले ही परिणाम देख चुके हैं।\n• किसी भी योजना के बारे में प्रश्न पूछें (जैसे: "PM-KISAN के दस्तावेज़ क्या हैं?")\n• दोबारा खोजने के लिए *RESTART* लिखें।\n• श्रेणी बदलने के लिए *BACK* लिखें।\n• सहायता के लिए *HELP* लिखें।`
-            : `You have completed the enquiry.\n• Ask any question about schemes (e.g. "What documents are needed for PM-KISAN?")\n• Type *RESTART* to start a new search.\n• Type *BACK* to change category.\n• Type *HELP* for available commands.`,
+            ? `आप पहले ही परिणाम देख चुके हैं।\n• किसी भी योजना के बारे में विस्तृत जानकारी पूछें (जैसे: "PM-KISAN के बारे में और बताओ" या "आवेदन कैसे करें?")\n• दोबारा खोजने के लिए *RESTART* लिखें।\n• श्रेणी बदलने के लिए *BACK* लिखें।\n• सहायता के लिए *HELP* लिखें।`
+            : `You have completed the enquiry.\n• Ask for more details on any scheme (e.g. "Tell me more about PM-KISAN" or "How to apply?")\n• Type *RESTART* to start a new search.\n• Type *BACK* to change category.\n• Type *HELP* for available commands.`,
         ];
 
       case 'STOPPED':
@@ -422,10 +426,21 @@ export class ConversationFlow {
 
     try {
       const schemes = await this.schemeService.getRelevantSchemes(profile);
+      state.lastShownSchemes = schemes.map((s) => s.name);
+      await this.store.set(senderId, state);
       return this.formatSchemeResults(schemes, lang);
     } catch (error) {
       // Return friendly service error without crashing
       return [t.serviceError];
+    }
+  }
+
+  private appendChatHistory(state: ConversationState, userText: string, modelText: string): void {
+    if (!state.chatHistory) state.chatHistory = [];
+    state.chatHistory.push({ role: 'user', text: userText });
+    state.chatHistory.push({ role: 'model', text: modelText });
+    if (state.chatHistory.length > 10) {
+      state.chatHistory = state.chatHistory.slice(-10);
     }
   }
 

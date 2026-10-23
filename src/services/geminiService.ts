@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import { GoogleGenAI } from '@google/genai';
 import { SCHEMES_DATABASE } from '../data/schemesDatabase';
 import { Scheme, UserProfile } from '../types/scheme';
@@ -13,6 +15,7 @@ export interface ConversationContext {
   state?: string;
   occupation?: string;
   age?: number;
+  lastShownSchemes?: string[];
   history?: ChatMessage[];
 }
 
@@ -20,29 +23,50 @@ export class GeminiService {
   private client: GoogleGenAI | null = null;
   private modelName: string;
   private apiKey: string;
+  private candidateModels: string[];
 
-  constructor() {
-    this.apiKey = process.env.GEMINI_API_KEY || '';
-    this.modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+  constructor(apiKey?: string, modelName?: string) {
+    this.apiKey = apiKey || '';
+    this.modelName = modelName || '';
+    this.candidateModels = [
+      'gemini-3.5-flash-lite',
+      'gemini-3.5-flash',
+      'gemini-3.8-flash',
+    ];
+  }
 
-    if (this.isConfigured()) {
-      this.client = new GoogleGenAI({ apiKey: this.apiKey });
-    }
+  getApiKey(): string {
+    return process.env.GEMINI_API_KEY || this.apiKey || '';
+  }
+
+  getModelName(): string {
+    return process.env.GEMINI_MODEL || this.modelName || 'gemini-3.5-flash-lite';
   }
 
   isConfigured(): boolean {
+    const key = this.getApiKey();
     return (
-      Boolean(this.apiKey) &&
-      this.apiKey !== 'your_gemini_api_key_here' &&
-      this.apiKey !== 'dummy_key' &&
-      this.apiKey.length > 10
+      Boolean(key) &&
+      key !== 'your_gemini_api_key_here' &&
+      key !== 'dummy_key' &&
+      key.length > 10
     );
   }
 
+  private getClient(): GoogleGenAI | null {
+    if (!this.isConfigured()) return null;
+    const currentKey = this.getApiKey();
+    if (!this.client) {
+      this.client = new GoogleGenAI({ apiKey: currentKey });
+    }
+    return this.client;
+  }
+
   /**
-   * Builds the system grounding prompt with curated knowledge of verified schemes.
+   * Builds the system grounding prompt with curated knowledge of verified schemes,
+   * injecting focused scheme details if a user is asking for more depth.
    */
-  private buildSystemPrompt(): string {
+  private buildSystemPrompt(context?: ConversationContext): string {
     // Generate a compact catalogue summary for context grounding
     const catalogueSummary = SCHEMES_DATABASE.map(
       (s, idx) =>
@@ -50,80 +74,135 @@ export class GeminiService {
 • Benefits: ${s.benefits}
 • Eligibility: ${s.eligibilitySummary}
 • Target: ${s.targetOccupations?.join(', ') || 'All'}
-• Documents: ${s.requiredDocuments.slice(0, 3).join(', ')}
+• Documents: ${s.requiredDocuments.join(', ')}
+• Application: ${s.applicationSteps.join(' -> ')}
 • Official Portal: ${s.officialUrl}`
     ).join('\n\n');
 
-    return `You are "Scheme Saathi" (स्कीम साथी) 🇮🇳, a helpful, respectful, and expert AI government welfare assistant for Indian citizens, especially farmers, rural families, workers, women, youth, and elderly citizens.
+    let focusedSchemesSection = '';
+    if (context?.lastShownSchemes && context.lastShownSchemes.length > 0) {
+      const focused = SCHEMES_DATABASE.filter((s) =>
+        context.lastShownSchemes!.some(
+          (name) =>
+            s.name.toLowerCase().includes(name.toLowerCase()) ||
+            name.toLowerCase().includes(s.name.toLowerCase()) ||
+            s.id.toLowerCase().includes(name.toLowerCase())
+        )
+      );
+
+      if (focused.length > 0) {
+        focusedSchemesSection = `\n\nRECENTLY DISCUSSED SCHEMES IN THIS SESSION:\n` +
+          focused
+            .map(
+              (f) => `### SCHEME: ${f.name}
+- Coverage/State: ${f.state}
+- Full Description: ${f.description}
+- Detailed Benefits: ${f.benefits}
+- Complete Eligibility Criteria: ${f.eligibilitySummary}
+- All Required Documents:
+  * ${f.requiredDocuments.join('\n  * ')}
+- Step-by-Step How to Apply:
+  1. ${f.applicationSteps.join('\n  2. ')}
+- Official Website: ${f.officialUrl}
+- Last Verified Date: ${f.lastVerifiedAt}`
+            )
+            .join('\n\n');
+      }
+    }
+
+    return `You are "Scheme Saathi" (स्कीम साथी) 🇮🇳, an empathetic, highly knowledgeable AI government welfare advisor for Indian citizens, especially farmers, rural families, workers, women, youth, and elderly citizens.
 
 YOUR MISSION:
-Help citizens discover legitimate government schemes, understand eligibility criteria, required documents, and application steps.
+Help citizens discover legitimate government schemes, understand eligibility criteria in depth, check required documents, and guide them step-by-step through application procedures.
 
-RULES AND CONSTRAINTS:
-1. LANGUAGE: Always respond in the SAME language and tone used by the citizen.
-   - If the citizen writes in Hindi (हिंदी), reply in clear, respectful Hindi (Devanagari script).
-   - If they write in Hinglish (e.g. "kisan ke liye loan"), reply in friendly, conversational Hinglish.
-   - If they write in English, reply in English.
-2. GROUNDING & ACCURACY:
-   - Base all scheme recommendations, benefit figures, eligibility rules, and official links strictly on the verified catalogue provided below.
-   - NEVER invent fake schemes, imaginary grant amounts, or false promises of government approval.
-   - If a citizen asks about a scheme not in the catalogue, share general awareness and direct them to the National Portal: https://www.myscheme.gov.in.
-3. PRIVACY & SAFETY:
-   - NEVER ask for Aadhaar numbers, bank account numbers, passwords, OTPs, or document uploads.
-   - Explicitly remind citizens that Scheme Saathi recommendations are guidance suggestions and they must verify official rules on the respective government portal before applying.
-4. WHATSAPP FORMATTING:
-   - Use bold for headings: *Scheme Name*
-   - Use emojis tastefully (🏛️, 💰, 👥, 📄, 🚀, 🔗).
-   - Keep messages concise, well-spaced, and easy to read on a mobile phone screen (under 1200 characters per response).
-   - Show maximum 2-3 most relevant schemes per response to avoid overwhelming the citizen.
-   - Always include the official portal link for the recommended schemes.
+CRITICAL INSTRUCTIONS FOR DETAILED/DEEP INFORMATION:
+- When a citizen asks for "more information", "deeper details", "how to apply", "eligibility", "documents", or asks about a specific scheme from recent recommendations:
+  DO NOT repeat a brief summary list!
+  Instead, provide a comprehensive, deep-dive breakdown on that specific scheme with:
+  1. 📋 *Detailed Eligibility Checklist & Exclusions* (who qualifies and who does not qualify)
+  2. 💰 *Exact Benefits & Financial Support* (installment amounts, subsidies, interest rates)
+  3. 📄 *Complete Document Checklist* (what documents to bring or upload)
+  4. 🚀 *Step-by-Step Application Procedure* (online portal steps and offline routes like CSC / Gram Panchayat / Block Office)
+  5. ⚠️ *Important Tips & Common Pitfalls* (e.g. e-KYC, Aadhaar-bank account seeding, land record verification)
+  6. 🔗 *Official Portal Link & Helpline Phone Numbers*
 
-VERIFIED GOVERNMENT SCHEMES CATALOGUE:
+LANGUAGE AND TONE:
+- Always respond in the SAME language and tone used by the citizen.
+  * If the citizen writes in Hindi (हिंदी), reply in clear, respectful Hindi (Devanagari script).
+  * If they write in Hinglish (e.g. "is scheme ke baare me aur detail do"), reply in friendly, conversational Hinglish.
+  * If they write in English, reply in English.
+
+GROUNDING & SAFETY:
+- Ground all facts, numbers, and links strictly on the verified catalogue provided below. Never invent fake schemes or false promises of government approval.
+- NEVER ask for Aadhaar numbers, bank account numbers, passwords, OTPs, or document uploads.
+- Remind citizens that Scheme Saathi recommendations are guidance suggestions and they must verify official rules on the respective government portal before applying.
+
+WHATSAPP FORMATTING:
+- Use bold for headings: *Scheme Name*
+- Use emojis tastefully (🏛️, 💰, 👥, 📄, 🚀, 🔗).
+- Keep formatting clean and well-spaced with bullet points.
+${focusedSchemesSection}
+
+FULL VERIFIED GOVERNMENT SCHEMES CATALOGUE:
 ${catalogueSummary}`;
   }
 
   /**
    * Generates a conversational AI answer to a citizen's query.
-   * If Gemini API is not configured or fails, gracefully falls back to local search.
+   * Leverages Gemini with multiple candidate model fallbacks and contextual history.
    */
   async answerSchemeQuery(
     userQuery: string,
     context?: ConversationContext
   ): Promise<string> {
-    if (!this.isConfigured() || !this.client) {
+    const client = this.getClient();
+    if (!client) {
       return this.localSearchFallback(userQuery, context);
     }
 
-    try {
-      const systemInstruction = this.buildSystemPrompt();
+    const systemInstruction = this.buildSystemPrompt(context);
 
-      let contextPrefix = '';
-      if (context?.state) contextPrefix += `[Citizen State: ${context.state}] `;
-      if (context?.occupation) contextPrefix += `[Citizen Occupation: ${context.occupation}] `;
-      if (context?.age) contextPrefix += `[Citizen Age: ${context.age}] `;
+    // Build context-rich prompt
+    let conversationThread = '';
+    if (context?.history && context.history.length > 0) {
+      const recent = context.history.slice(-6);
+      conversationThread =
+        'RECENT CONVERSATION HISTORY:\n' +
+        recent.map((m) => `${m.role === 'user' ? 'Citizen' : 'Scheme Saathi'}: ${m.text}`).join('\n') +
+        '\n\n';
+    }
 
-      const promptText = contextPrefix
-        ? `${contextPrefix}\nCitizen Query: "${userQuery}"`
-        : `Citizen Query: "${userQuery}"`;
+    let profileContext = '';
+    if (context?.state) profileContext += `[State: ${context.state}] `;
+    if (context?.occupation) profileContext += `[Occupation: ${context.occupation}] `;
+    if (context?.age) profileContext += `[Age: ${context.age}] `;
 
-      const response = await this.client.models.generateContent({
-        model: this.modelName,
-        contents: promptText,
-        config: {
-          systemInstruction,
-          temperature: 0.3,
-        },
-      });
+    const finalPrompt = `${conversationThread}${profileContext}\nCitizen Query: "${userQuery}"`;
 
-      const replyText = response.text?.trim();
-      if (replyText) {
-        return replyText;
+    // Try candidate models in order of speed and capability
+    for (const model of this.candidateModels) {
+      try {
+        const response = await client.models.generateContent({
+          model,
+          contents: finalPrompt,
+          config: {
+            systemInstruction,
+            temperature: 0.3,
+          },
+        });
+
+        const replyText = response.text?.trim();
+        if (replyText) {
+          return replyText;
+        }
+      } catch (error: any) {
+        console.warn(`[GeminiService] Model ${model} failed:`, error.message || error);
+        // Continue to next candidate model
       }
-      return this.localSearchFallback(userQuery, context);
-    } catch (error: any) {
-      console.warn('[GeminiService Warning] API request failed, falling back to local search:', error.message || error);
-      return this.localSearchFallback(userQuery, context);
     }
+
+    // Fallback if all Gemini models failed
+    return this.localSearchFallback(userQuery, context);
   }
 
   /**
@@ -133,9 +212,15 @@ ${catalogueSummary}`;
     const lower = text.toLowerCase();
     const result: Partial<UserProfile> & { isQuestion?: boolean } = {};
 
-    // Check if it looks like a question or free-form query
-    const questionWords = ['kya', 'kaise', 'what', 'how', 'which', 'scheme', 'yojana', 'batao', 'subsidy', 'loan', 'pension', 'bima', 'documents', 'eligibility', 'apply'];
-    result.isQuestion = questionWords.some((w) => lower.includes(w)) || text.includes('?') || text.length > 25;
+    // Check if it looks like a question, detailed inquiry, or request for more information
+    const inquiryWords = [
+      'kya', 'kaise', 'what', 'how', 'which', 'scheme', 'yojana', 'batao',
+      'subsidy', 'loan', 'pension', 'bima', 'documents', 'eligibility',
+      'apply', 'detail', 'details', 'information', 'more', 'aur', 'jaankari',
+      'process', 'steps', 'portal', 'website', 'second', 'first', 'third',
+      'this', 'that', 'kcc', 'kisan', 'kusum', 'pmay', 'ayushman',
+    ];
+    result.isQuestion = inquiryWords.some((w) => lower.includes(w)) || text.includes('?') || text.length > 20;
 
     // 1. Detect State
     const matchedState = matchIndianState(text);
@@ -223,6 +308,15 @@ ${catalogueSummary}`;
       }
     }
 
+    // Check if user is asking for more details about a specific scheme
+    const isDetailRequest =
+      q.includes('detail') ||
+      q.includes('more') ||
+      q.includes('aur') ||
+      q.includes('document') ||
+      q.includes('apply') ||
+      q.includes('eligib');
+
     // Score schemes by keyword relevance
     const matchedSchemes = SCHEMES_DATABASE.map((scheme) => {
       let score = 0;
@@ -233,17 +327,21 @@ ${catalogueSummary}`;
       for (const word of words) {
         if (combined.includes(word)) score += 2;
         if (scheme.name.toLowerCase().includes(word)) score += 4;
+        if (scheme.id.toLowerCase() === word) score += 6;
       }
 
       // Context boost
-      if (context?.state && scheme.state.toLowerCase().includes(context.state.toLowerCase())) score += 3;
+      if (context?.lastShownSchemes && context.lastShownSchemes.some((s) => scheme.name.includes(s) || s.includes(scheme.name))) {
+        score += 3;
+      }
+      if (context?.state && scheme.state.toLowerCase().includes(context.state.toLowerCase())) score += 2;
       if (context?.occupation && scheme.targetOccupations?.includes(context.occupation as any)) score += 2;
 
       return { scheme, score };
     })
       .filter((item) => item.score > 0)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 2)
+      .slice(0, isDetailRequest ? 1 : 2)
       .map((item) => item.scheme);
 
     if (matchedSchemes.length === 0) {
@@ -252,8 +350,8 @@ ${catalogueSummary}`;
           `नमस्ते! 🇮🇳\n\n` +
           `मुझे आपके प्रश्न "${userQuery}" के अनुसार कुछ विशिष्ट योजनाएं खोजने में सहायता चाहिए।\n\n` +
           `💡 *सुझाव:*\n` +
-          `• आप चरण-दर-चरण योजना खोज के लिए *START* लिख सकते हैं।\n` +
-          `• अपने राज्य और व्यवसाय का नाम लिखकर पुनः पूछें (जैसे: "UP kisan solar pump")।\n` +
+          `• आप किसी भी विशिष्ट योजना का नाम पूछ सकते हैं (जैसे: "PM KISAN के दस्तावेज़ क्या हैं?")।\n` +
+          `• चरण-दर-चरण योजना खोज के लिए *START* लिख सकते हैं।\n` +
           `• राष्ट्रीय पोर्टल देखें: https://www.myscheme.gov.in`
         );
       }
@@ -261,13 +359,42 @@ ${catalogueSummary}`;
         `Hello! 🇮🇳\n\n` +
         `I searched our database for "${userQuery}", but could not locate an exact match.\n\n` +
         `💡 *Tip:*\n` +
+        `• Ask about a specific scheme (e.g. "How to apply for PM-KISAN" or "Documents for KCC").\n` +
         `• Type *START* to use our step-by-step personalized eligibility checker.\n` +
-        `• Mention your state and occupation (e.g. "Maharashtra farmer crop loan").\n` +
         `• Browse the national portal: https://www.myscheme.gov.in`
       );
     }
 
-    // Format top matched schemes
+    // If citizen requested a deep-dive on a single scheme
+    if (isDetailRequest && matchedSchemes.length >= 1) {
+      const s = matchedSchemes[0];
+      if (isHindi) {
+        return (
+          `🏛️ *${s.name} — विस्तृत विवरण एवं आवेदन मार्गदर्शिका*\n` +
+          `📍 _क्षेत्र/राज्य: ${s.state}_\n\n` +
+          `📝 *उद्देश्य:* ${s.description}\n\n` +
+          `💰 *लाभ:* ${s.benefits}\n\n` +
+          `👥 *पात्रता विवरण:* ${s.eligibilitySummary}\n\n` +
+          `📄 *आवश्यक दस्तावेज़:*\n• ${s.requiredDocuments.join('\n• ')}\n\n` +
+          `🚀 *आवेदन प्रक्रिया:*\n1. ${s.applicationSteps.join('\n2. ')}\n\n` +
+          `🔗 *आधिकारिक वेबसाइट:* ${s.officialUrl}\n\n` +
+          `⚠️ *महत्वपूर्ण:* आवेदन करने से पूर्व आधिकारिक पोर्टल पर नवीनतम नियमों की पुष्टि अवश्य करें।`
+        );
+      }
+      return (
+        `🏛️ *${s.name} — Detailed Guide & Application Steps*\n` +
+        `📍 _Coverage: ${s.state}_\n\n` +
+        `📝 *Purpose:* ${s.description}\n\n` +
+        `💰 *Benefits:* ${s.benefits}\n\n` +
+        `👥 *Eligibility Details:* ${s.eligibilitySummary}\n\n` +
+        `📄 *Complete Document Checklist:*\n• ${s.requiredDocuments.join('\n• ')}\n\n` +
+        `🚀 *Step-by-Step How to Apply:*\n1. ${s.applicationSteps.join('\n2. ')}\n\n` +
+        `🔗 *Official Website:* ${s.officialUrl}\n\n` +
+        `⚠️ *Notice:* Please confirm the latest guidelines on the official portal before applying.`
+      );
+    }
+
+    // Format matched schemes list
     if (isHindi) {
       let response = `यहाँ आपके प्रश्न से संबंधित प्रमुख सरकारी योजनाएं हैं:\n\n`;
       for (let i = 0; i < matchedSchemes.length; i++) {
@@ -279,8 +406,7 @@ ${catalogueSummary}`;
           `📄 *दस्तावेज़:* ${s.requiredDocuments.slice(0, 3).join(', ')}\n` +
           `🔗 *पोर्टल:* ${s.officialUrl}\n\n`;
       }
-      response += `⚠️ *सूचना:* ये परिणाम मार्गदर्शन के लिए हैं। आवेदन करने से पहले आधिकारिक पोर्टल पर नियमों की पुष्टि अवश्य करें।\n\n` +
-        `💡 नया सत्र शुरू करने के लिए *START* लिखें।`;
+      response += `⚠️ *सूचना:* ये परिणाम मार्गदर्शन के लिए हैं। किसी योजना की विस्तृत जानकारी के लिए उसका नाम लिखें (जैसे: "PM KISAN के बारे में और बताओ")।`;
       return response;
     }
 
@@ -294,8 +420,7 @@ ${catalogueSummary}`;
         `📄 *Key Documents:* ${s.requiredDocuments.slice(0, 3).join(', ')}\n` +
         `🔗 *Official Portal:* ${s.officialUrl}\n\n`;
     }
-    response += `⚠️ *Notice:* Matches are guidance suggestions. Please verify rules on the official portal before applying.\n\n` +
-      `💡 Type *START* for a personalized eligibility check.`;
+    response += `⚠️ *Notice:* Matches are guidance suggestions. For deeper details, simply ask: "Tell me more about [Scheme Name]".`;
     return response;
   }
 }

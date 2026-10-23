@@ -32,6 +32,8 @@ export interface ConversationState {
   consent: boolean | null;
   answers: UserAnswers;
   history: ConversationHistoryEntry[];
+  chatHistory?: Array<{ role: 'user' | 'model'; text: string }>;
+  lastShownSchemes?: string[];
   lastMessageId?: string;
   updatedAt: number;
 }
