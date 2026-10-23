@@ -465,6 +465,7 @@
   // ========================================================
   const rejectionModal = document.getElementById('rejection-modal');
   const openRejHeaderBtn = document.getElementById('header-rejection-btn');
+  const openRejDockBtn = document.getElementById('dock-rejection-btn');
   const openRejSideBtn = document.getElementById('open-rejection-modal-btn');
   const rejCloseBtn = document.getElementById('rejection-modal-close');
   const rejOverlay = document.getElementById('rejection-modal-overlay');
@@ -500,6 +501,7 @@
   }
 
   if (openRejHeaderBtn) openRejHeaderBtn.addEventListener('click', () => openRejectionModal());
+  if (openRejDockBtn) openRejDockBtn.addEventListener('click', () => openRejectionModal());
   if (openRejSideBtn) openRejSideBtn.addEventListener('click', () => openRejectionModal());
   if (rejCloseBtn) rejCloseBtn.addEventListener('click', closeRejectionModal);
   if (rejOverlay) rejOverlay.addEventListener('click', closeRejectionModal);
@@ -771,6 +773,7 @@
   // ========================================================
   const lifeEventModal = document.getElementById('life-event-modal');
   const openLeHeaderBtn = document.getElementById('header-life-event-btn');
+  const openLeDockBtn = document.getElementById('dock-life-event-btn');
   const openLeSideBtn = document.getElementById('open-life-event-modal-btn');
   const leCloseBtn = document.getElementById('life-event-modal-close');
   const leOverlay = document.getElementById('life-event-modal-overlay');
@@ -801,6 +804,7 @@
   }
 
   if (openLeHeaderBtn) openLeHeaderBtn.addEventListener('click', () => openLifeEventModal());
+  if (openLeDockBtn) openLeDockBtn.addEventListener('click', () => openLifeEventModal());
   if (openLeSideBtn) openLeSideBtn.addEventListener('click', () => openLifeEventModal());
   if (leCloseBtn) leCloseBtn.addEventListener('click', closeLifeEventModal);
   if (leOverlay) leOverlay.addEventListener('click', closeLifeEventModal);

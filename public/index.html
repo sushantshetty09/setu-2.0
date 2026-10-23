@@ -50,21 +50,14 @@
                   <path d="M7.5 12.2L4.5 9.2L5.6 8.1L7.5 10L12.4 5.1L13.5 6.2L7.5 12.2Z" fill="#ffffff"/>
                 </svg>
               </span>
-              <span class="gov-pill">Govt schemes</span>
             </div>
             <p class="contact-status">online • Powered by Gemini AI</p>
           </div>
         </div>
 
         <div class="header-right">
-          <button id="header-rejection-btn" class="feature-header-pill rejection" title="Application Rejected?">
-            <span>🚫</span> Rejection Help
-          </button>
-          <button id="header-life-event-btn" class="feature-header-pill life-event" title="Find Schemes for My Situation">
-            <span>🌱</span> Life Situation
-          </button>
-          <button id="db-header-btn" class="db-header-pill" title="View Citizen Enquiries Database" aria-label="View Database">
-            <span>📊</span> Database
+          <button id="db-header-btn" class="icon-btn" title="View Citizen Enquiries Database" aria-label="View Database">
+            <span>📊</span>
           </button>
           <button id="sound-toggle-btn" class="icon-btn" title="Toggle Sound" aria-label="Toggle Sound">
             <span id="sound-icon">🔊</span>
@@ -106,10 +99,28 @@
         </div>
       </div>
 
+      <!-- Dedicated AI Feature Tabs (Cleanly separated from topbar) -->
+      <nav class="feature-dock-tabs" id="feature-dock-tabs" aria-label="AI Feature Assistants">
+        <button id="dock-rejection-btn" class="dock-tab-btn rejection-tab" title="Application Rejected? Understand notice & find verified next steps">
+          <span class="dock-tab-icon">🚫</span>
+          <div class="dock-tab-text">
+            <span class="dock-tab-title">Rejection Help</span>
+            <span class="dock-tab-sub">Notice & Appeals</span>
+          </div>
+          <span class="dock-tab-tag">AI Help</span>
+        </button>
+        <button id="dock-life-event-btn" class="dock-tab-btn life-event-tab" title="Find Schemes for My Situation: Crop loss, business, pension, etc.">
+          <span class="dock-tab-icon">🌱</span>
+          <div class="dock-tab-text">
+            <span class="dock-tab-title">Life Situation</span>
+            <span class="dock-tab-sub">Benefit Discovery</span>
+          </div>
+          <span class="dock-tab-tag">AI Search</span>
+        </button>
+      </nav>
+
       <!-- Quick Action Suggestion Chips -->
       <div class="quick-chips-wrapper" id="quick-chips">
-        <button class="chip chip-feature-rejection" id="chip-rejection-btn" data-action="open-rejection">🚫 Application Rejected? (ಅರ್ಜಿ ತಿರಸ್ಕೃತ?)</button>
-        <button class="chip chip-feature-life-event" id="chip-life-event-btn" data-action="open-life-event">🌱 Find Schemes for My Situation (ನನ್ನ ಪರಿಸ್ಥಿತಿಗೆ ಯೋಜನೆ)</button>
         <button class="chip" data-text="HI">👋 Hi / Start / ನಮಸ್ಕಾರ</button>
         <button class="chip" data-text="1">1. Hindi (हिंदी)</button>
         <button class="chip" data-text="2">2. English</button>
